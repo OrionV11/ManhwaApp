@@ -52,9 +52,9 @@ export default function ManhwaDetail() {
 return (
   <View style={styles.container}>
     <View style={styles.imageContainer}>
-      {media.cover_image_url ? (
+      {media.cover_image ? (
         <Image
-          source={{ uri: media.cover_image_url }}
+          source={{ uri: media.cover_image }}
           style={styles.image}
           resizeMode="cover"
         />

@@ -51,9 +51,9 @@ const ManhwaFetch: React.FC = () => {
     >
       {/* Cover Image */}
       <View style={styles.imageContainer}>
-        {item.cover_image_url ? (
+        {item.cover_image ? (
           <Image
-            source={{ uri: item.cover_image_url }}
+            source={{ uri: item.cover_image }}
             style={styles.image}
             resizeMode="cover"
           />
