@@ -1,0 +1,17 @@
+#
+
+"div:' class_"genre_tab_drama" 
+
+"div" class_"genre_tab_fantasy"
+
+title
+
+meta property  "og:description" content{text}
+
+link type "image/x-icon'
+
+for link in links:
+	
+	full = link.get('href')
+	full.strip('/')
+	
