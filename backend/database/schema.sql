@@ -1,137 +1,147 @@
+-- Users table
 CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  username VARCHAR(50) UNIQUE NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  bio TEXT,
-  avatar_url VARCHAR(500),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    profile_picture VARCHAR(500),
+    bio TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Manhwa/Media table
 CREATE TABLE media (
-  id INTEGER PRIMARY KEY,  -- AniList ID to maintain consistency
-  type VARCHAR(10) NOT NULL,  -- 'ANIME' or 'MANGA'
-  title_romaji VARCHAR(255) NOT NULL,
-  title_english VARCHAR(255),
-  description TEXT,
-  cover_image_url VARCHAR(500),
-  banner_image_url VARCHAR(500),
-  genres TEXT[],  -- Array of genre strings
-  average_score DECIMAL(3,1),  -- 0-100
-  popularity_rank INTEGER,
-  mal_id INTEGER,  -- MyAnimeList ID for cross-reference
-  anilist_url VARCHAR(500),
-  episodes INTEGER,  -- For anime only
-  chapters INTEGER,  -- For manga only
-  status VARCHAR(20),  -- 'FINISHED', 'RELEASING', 'NOT_YET_RELEASED'
-  year_released INTEGER,
-  season VARCHAR(10),  -- 'FALL', 'WINTER', 'SPRING', 'SUMMER' (anime)
-  source VARCHAR(50),  -- 'MANGA', 'LIGHT_NOVEL', 'ORIGINAL', etc.
-  last_synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    title_romaji VARCHAR(255) NOT NULL,
+    title_english VARCHAR(255),
+    title_native VARCHAR(255),
+    type VARCHAR(20) NOT NULL, -- 'MANGA', 'MANHWA', 'MANHUA', 'ANIME'
+    format VARCHAR(20), -- 'TV', 'MOVIE', 'OVA', 'SPECIAL', 'MANGA', 'ONE_SHOT'
+    status VARCHAR(20), -- 'FINISHED', 'RELEASING', 'NOT_YET_RELEASED', 'CANCELLED'
+    description TEXT,
+    start_date DATE,
+    end_date DATE,
+    chapters INTEGER,
+    volumes INTEGER,
+    episodes INTEGER,
+    cover_image VARCHAR(500),
+    banner_image VARCHAR(500),
+    genres TEXT[], -- PostgreSQL array for multiple genres
+    tags TEXT[],
+    average_score DECIMAL(4,2), -- e.g., 85.50
+    popularity INTEGER DEFAULT 0,
+    favorites INTEGER DEFAULT 0,
+    source VARCHAR(50), -- 'ORIGINAL', 'MANGA', 'LIGHT_NOVEL', 'WEB_NOVEL', etc.
+    country_of_origin VARCHAR(2), -- 'JP', 'KR', 'CN'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for fast searching
-CREATE INDEX idx_media_type ON media(type);
-CREATE INDEX idx_media_title_romaji ON media(title_romaji);
-CREATE INDEX idx_media_genres ON media USING GIN(genres);
-CREATE INDEX idx_media_status ON media(status);
-
-CREATE TABLE user_media_entries (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
-  status VARCHAR(20) NOT NULL,  -- 'WATCHING', 'COMPLETED', 'DROPPED', 'PAUSED', 'PLANNING'
-  rating DECIMAL(2,1),  -- 0-10, nullable (can rate without review)
-  review TEXT,
-  episodes_watched INTEGER,  -- For anime
-  chapters_read INTEGER,  -- For manga
-  started_at DATE,
-  completed_at DATE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, media_id)  -- One entry per user per media
+-- User media lists (reading list, completed, plan to read, etc.)
+CREATE TABLE user_media_lists (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL, -- 'READING', 'COMPLETED', 'PLAN_TO_READ', 'DROPPED', 'ON_HOLD'
+    score DECIMAL(3,1), -- User's rating (0-10)
+    progress INTEGER DEFAULT 0, -- Chapters/episodes read
+    notes TEXT,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, media_id) -- A user can only have one entry per media
 );
 
-CREATE INDEX idx_user_media_entries_user ON user_media_entries(user_id);
-CREATE INDEX idx_user_media_entries_media ON user_media_entries(media_id);
-CREATE INDEX idx_user_media_entries_status ON user_media_entries(status);
-
-CREATE TABLE user_lists (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  name VARCHAR(100) NOT NULL,
-  description TEXT,
-  is_public BOOLEAN DEFAULT false,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, name)
+-- Likes/Favorites
+CREATE TABLE media_likes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, media_id) -- A user can only like a media once
 );
 
-CREATE TABLE user_list_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  list_id UUID NOT NULL REFERENCES user_lists(id) ON DELETE CASCADE,
-  media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
-  position INTEGER,  -- For custom ordering
-  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(list_id, media_id)
-);
-
-CREATE INDEX idx_user_lists_user ON user_lists(user_id);
-CREATE INDEX idx_user_list_items_list ON user_list_items(list_id);
-
+-- User followers system
 CREATE TABLE user_follows (
-  follower_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  following_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (follower_id, following_id)
+    id SERIAL PRIMARY KEY,
+    follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- User who is following
+    following_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- User being followed
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(follower_id, following_id), -- Can't follow the same user twice
+    CHECK (follower_id != following_id) -- Can't follow yourself
 );
 
-CREATE TABLE review_likes (
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  entry_id UUID NOT NULL REFERENCES user_media_entries(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, entry_id)
+-- Reviews/Comments
+CREATE TABLE reviews (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+    rating DECIMAL(3,1), -- 0-10 rating
+    title VARCHAR(255),
+    content TEXT NOT NULL,
+    likes_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Review likes
+CREATE TABLE review_likes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, review_id)
+);
+
+-- Reading history/activity
+CREATE TABLE user_activity (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+    activity_type VARCHAR(50) NOT NULL, -- 'STARTED', 'COMPLETED', 'UPDATED_PROGRESS', 'REVIEWED', 'LIKED'
+    details JSONB, -- Flexible field for storing activity-specific data
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for better query performance
+CREATE INDEX idx_media_type ON media(type);
+CREATE INDEX idx_media_status ON media(status);
+CREATE INDEX idx_media_score ON media(average_score DESC);
+CREATE INDEX idx_media_popularity ON media(popularity DESC);
+CREATE INDEX idx_media_genres ON media USING GIN(genres); -- GIN index for array searches
+
+CREATE INDEX idx_user_media_lists_user ON user_media_lists(user_id);
+CREATE INDEX idx_user_media_lists_media ON user_media_lists(media_id);
+CREATE INDEX idx_user_media_lists_status ON user_media_lists(status);
+
+CREATE INDEX idx_media_likes_user ON media_likes(user_id);
+CREATE INDEX idx_media_likes_media ON media_likes(media_id);
 
 CREATE INDEX idx_user_follows_follower ON user_follows(follower_id);
 CREATE INDEX idx_user_follows_following ON user_follows(following_id);
-CREATE INDEX idx_review_likes_entry ON review_likes(entry_id);
 
-SELECT * FROM media
-WHERE type = 'ANIME'
-  AND (title_romaji ILIKE '%search_term%' 
-       OR title_english ILIKE '%search_term%')
-  AND genres @> ARRAY['Action', 'Adventure']
-ORDER BY average_score DESC
-LIMIT 20;
+CREATE INDEX idx_reviews_media ON reviews(media_id);
+CREATE INDEX idx_reviews_user ON reviews(user_id);
 
-SELECT 
-  m.*,
-  ume.status,
-  ume.rating,
-  ume.episodes_watched
-FROM user_media_entries ume
-JOIN media m ON ume.media_id = m.id
-WHERE ume.user_id = $1
-  AND ume.status = 'WATCHING'
-ORDER BY ume.updated_at DESC;
+CREATE INDEX idx_user_activity_user ON user_activity(user_id);
+CREATE INDEX idx_user_activity_created ON user_activity(created_at DESC);
 
-SELECT 
-  m.*,
-  COUNT(ume.id) as total_entries,
-  AVG(ume.rating) as avg_user_rating
-FROM media m
-LEFT JOIN user_media_entries ume ON m.id = ume.media_id
-WHERE ume.created_at > NOW() - INTERVAL '7 days'
-GROUP BY m.id
-ORDER BY total_entries DESC
-LIMIT 20;
+-- Trigger to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
 
--- Upsert example (on your backend)
-INSERT INTO media (id, type, title_romaji, ...)
-VALUES ($1, $2, $3, ...)
-ON CONFLICT (id) DO UPDATE SET
-  title_english = $4,
-  average_score = $5,
-  last_synced_at = CURRENT_TIMESTAMP;
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_media_updated_at BEFORE UPDATE ON media
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_media_lists_updated_at BEFORE UPDATE ON user_media_lists
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

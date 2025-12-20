@@ -2,13 +2,12 @@ from fastapi import FastAPI, HTTPException, Query, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from datetime import timedelta
+from typing import Optional
 
 from database import Base, engine, SessionLocal
-from models import User
+from models import User, Media
 from passlib.context import CryptContext
 from fastapi.middleware.cors import CORSMiddleware
-from config.database import query_db
-from auth import create_access_token, verify_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
 app = FastAPI(title="Manhwa App API")
 
@@ -32,7 +31,7 @@ def verify_password(password, hashed):
 
 # --------- Schemas ------------
 class UserCreate(BaseModel):
-    name: str
+    username: str
     email: EmailStr
     password: str
 
@@ -45,7 +44,7 @@ class Token(BaseModel):
     token_type: str
     user: dict
 
-# CORS middleware - moved before routes
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Update with your frontend URL in production
@@ -57,7 +56,7 @@ app.add_middleware(
 # ---------- Routes -----------
 @app.get("/api/health")
 def health_check():
-    return {"message": "Server is running"}
+    return {"message": "Server is running", "status": "ok"}
 
 @app.post("/signup", response_model=dict)
 def signup(user: UserCreate, db: Session = Depends(get_db)):
@@ -65,8 +64,13 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Check username
+    existing_username = db.query(User).filter(User.username == user.username).first()
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Username already taken")
+    
     new_user = User(
-        name=user.name,
+        username=user.username,
         email=user.email,
         hashed_password=hash_password(user.password),
     )
@@ -77,109 +81,155 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     
     return {"message": "User created successfully", "user_id": new_user.id}
 
-@app.post("/login", response_model=Token)
+@app.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Create JWT token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": db_user.id, "email": db_user.email},
-        expires_delta=access_token_expires
-    )
-    
+    # For now, return a simple response (you can add JWT later)
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
+        "message": "Login successful",
         "user": {
             "id": db_user.id,
-            "name": db_user.name,
+            "username": db_user.username,
             "email": db_user.email,
         }
     }
 
-# Protected route example
-@app.get("/api/profile")
-def get_profile(user_id: int = Depends(verify_token), db: Session = Depends(get_db)):
-    """Get user profile (requires authentication)"""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return {
-        "id": user.id,
-        "name": user.name,
-        "email": user.email,
-        "created_at": user.created_at
-    }
-
 @app.get("/api/media/search")
-def search_media(query: str = Query(..., min_length=1), type: str = None, genre: str = None):
-    """Search for anime/manga"""
+def search_media(
+    query: str = Query(..., min_length=1),
+    type: Optional[str] = None,
+    genre: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Search for anime/manga/manhwa"""
     try:
-        sql = """
-            SELECT * FROM media
-            WHERE (title_romaji ILIKE %s OR title_english ILIKE %s)
-        """
-        params = [f"%{query}%", f"%{query}%"]
+        # Start with base query
+        media_query = db.query(Media)
         
+        # Search in title fields
+        search_filter = (
+            Media.title_romaji.ilike(f"%{query}%") |
+            Media.title_english.ilike(f"%{query}%")
+        )
+        media_query = media_query.filter(search_filter)
+        
+        # Filter by type if provided
         if type:
-            sql += " AND type = %s"
-            params.append(type.upper())
+            media_query = media_query.filter(Media.type == type.upper())
         
+        # Filter by genre if provided (PostgreSQL array contains)
         if genre:
-            sql += " AND %s = ANY(genres)"
-            params.append(genre)
+            media_query = media_query.filter(Media.genres.contains([genre]))
         
-        sql += " ORDER BY average_score DESC LIMIT 50"
+        # Order by score and limit
+        results = media_query.order_by(Media.average_score.desc()).limit(50).all()
         
-        results = query_db(sql, tuple(params))
-        return results
+        # Convert to dict
+        return [media_to_dict(media) for media in results]
+    
     except Exception as e:
+        print(f"Search error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/media/trending")
-def get_trending(limit: int = Query(10, ge=1, le=100)):
+def get_trending(limit: int = Query(10, ge=1, le=100), db: Session = Depends(get_db)):
     """Get trending media"""
     try:
-        sql = """
-            SELECT * FROM media
-            ORDER BY average_score DESC
-            LIMIT %s
-        """
-        results = query_db(sql, (limit,))
-        return results
+        results = db.query(Media)\
+            .filter(Media.average_score.isnot(None))\
+            .order_by(Media.popularity.desc(), Media.average_score.desc())\
+            .limit(limit)\
+            .all()
+        
+        return [media_to_dict(media) for media in results]
+    
     except Exception as e:
+        print(f"Trending error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/media/latest")
-def get_latest(limit: int = Query(10, ge=1, le=100)):
+def get_latest(limit: int = Query(10, ge=1, le=100), db: Session = Depends(get_db)):
     """Get latest media added"""
     try:
-        sql = """
-            SELECT * FROM media
-            ORDER BY created_at DESC
-            LIMIT %s
-        """
-        results = query_db(sql, (limit,))
-        return results
+        results = db.query(Media)\
+            .order_by(Media.created_at.desc())\
+            .limit(limit)\
+            .all()
+        
+        return [media_to_dict(media) for media in results]
+    
     except Exception as e:
+        print(f"Latest error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/media/{media_id}")
-def get_media_by_id(media_id: int):
+def get_media_by_id(media_id: int, db: Session = Depends(get_db)):
     """Get media details by ID"""
     try:
-        results = query_db("SELECT * FROM media WHERE id = %s", (media_id,))
-        if not results:
+        media = db.query(Media).filter(Media.id == media_id).first()
+        
+        if not media:
             raise HTTPException(status_code=404, detail="Media not found")
-        return results[0]
+        
+        return media_to_dict(media)
+    
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Get media error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/media/type/{media_type}")
+def get_by_type(
+    media_type: str,
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """Get media by type (ANIME, MANGA, MANHWA, MANHUA)"""
+    try:
+        results = db.query(Media)\
+            .filter(Media.type == media_type.upper())\
+            .order_by(Media.popularity.desc())\
+            .limit(limit)\
+            .all()
+        
+        return [media_to_dict(media) for media in results]
+    
+    except Exception as e:
+        print(f"Get by type error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+def media_to_dict(media: Media) -> dict:
+    """Convert Media object to dictionary"""
+    return {
+        "id": media.id,
+        "title_romaji": media.title_romaji,
+        "title_english": media.title_english,
+        "title_native": media.title_native,
+        "type": media.type,
+        "format": media.format,
+        "status": media.status,
+        "description": media.description,
+        "start_date": media.start_date.isoformat() if media.start_date else None,
+        "end_date": media.end_date.isoformat() if media.end_date else None,
+        "chapters": media.chapters,
+        "volumes": media.volumes,
+        "episodes": media.episodes,
+        "cover_image": media.cover_image,
+        "banner_image": media.banner_image,
+        "genres": media.genres or [],
+        "tags": media.tags or [],
+        "average_score": float(media.average_score) if media.average_score else None,
+        "popularity": media.popularity,
+        "favorites": media.favorites,
+        "source": media.source,
+        "country_of_origin": media.country_of_origin,
+        "created_at": media.created_at.isoformat() if media.created_at else None,
+        "updated_at": media.updated_at.isoformat() if media.updated_at else None,
+    }
 
 if __name__ == "__main__":
     import uvicorn
