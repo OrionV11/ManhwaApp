@@ -1,16 +1,17 @@
 import React from 'react';
 import {
-	Image,
-	StyleSheet,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	View
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
-const user_icon = require("../assets/person.png");
-const password_icon = require("../assets/hide.png");
-const email_icon = require("../assets/email.png");
+const user_icon = require('../../assets/images/person.png');
+const password_icon = require('../../assets/images/hide.png');
+const email_icon = require('../../assets/images/email.png');
+
 
 const LoginSignup = () => {
 	return (

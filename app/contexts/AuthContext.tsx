@@ -1,5 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const API_BASE_URL = 'http://localhost:3000'; // Change to your server IP for mobile
 
@@ -9,12 +9,23 @@ interface User {
   email: string;
 }
 
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  bio?: string | null;
+  profile_picture?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: { username?: string; bio?: string; profile_picture?: string | null }) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -100,6 +111,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateProfile = async (data: { username?: string; bio?: string; profile_picture?: string | null }) => {
+    if (!user) throw new Error('No user logged in');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.detail || 'Update failed');
+      }
+
+      // Update local user data
+      const updatedUser = { ...user, ...data };
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -108,6 +147,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         login,
         signup,
         logout,
+        updateProfile,
         isAuthenticated: !!user,
       }}
     >

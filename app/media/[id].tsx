@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Media } from '../services/Manhwa';
 
 export default function ManhwaDetail() {
@@ -50,7 +50,7 @@ export default function ManhwaDetail() {
     );
     }
 return (
-  <View style={styles.container}>
+  <ScrollView style={styles.container}>
     <View style={styles.imageContainer}>
       {media.cover_image ? (
         <Image
@@ -82,7 +82,8 @@ return (
     <Text style={styles.description}>{media.description}</Text>
     
     {/* Add more fields as you want */}
-  </View>
+  </ScrollView>
+  
 );
 }
 const styles = StyleSheet.create({

@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,12 +13,13 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 
-const user_icon = require('../assets/person.png');
-const password_icon = require('../assets/hide.png');
-const email_icon = require('../assets/email.png');
+const user_icon = require('../../assets/images/person.png');
+const password_icon = require('../../assets/images/hide.png');
+const email_icon = require('../../assets/images/email.png');
 
 const ProfileScreen = () => {
   const { user, loading, logout, login, signup, isAuthenticated } = useAuth();
+  const router = useRouter();
   
   // Auth form state
   const [isSignup, setIsSignup] = useState(true);
@@ -181,14 +183,26 @@ const ProfileScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileSection}>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>
-            {user.username.charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        {user.profile_picture ? (
+          <Image source={{ uri: user.profile_picture }} style={styles.avatarImage} />
+        ) : (
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>
+              {user.username.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
         
         <Text style={styles.name}>{user.username}</Text>
         <Text style={styles.email}>{user.email}</Text>
+        {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
+        
+        <TouchableOpacity 
+          style={styles.editButton}
+          onPress={() => router.push('../edit-profile')}
+        >
+          <Text style={styles.editButtonText}>Edit Profile</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.statsContainer}>
@@ -331,6 +345,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 15,
+  },
   avatarText: {
     fontSize: 40,
     fontWeight: 'bold',
@@ -345,6 +365,27 @@ const styles = StyleSheet.create({
   email: {
     fontSize: 14,
     color: '#777',
+    marginBottom: 10,
+  },
+  bio: {
+    fontSize: 14,
+    color: '#555',
+    textAlign: 'center',
+    marginTop: 10,
+    marginHorizontal: 20,
+    lineHeight: 20,
+  },
+  editButton: {
+    marginTop: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: '#4c00b4',
+    borderRadius: 20,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   statsContainer: {
     flexDirection: 'row',

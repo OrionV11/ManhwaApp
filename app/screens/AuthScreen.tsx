@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 
-const user_icon = require('../assets/person.png');
-const password_icon = require('../assets/hide.png');
-const email_icon = require('../assets/email.png');
+const user_icon = require('../../assets/images/person.png');
+const password_icon = require('../../assets/images/hide.png');
+const email_icon = require('../../assets/images/email.png');
 
 const AuthScreen = () => {
   const { login, signup } = useAuth();

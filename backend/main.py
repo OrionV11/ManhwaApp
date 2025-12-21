@@ -202,6 +202,54 @@ def get_by_type(
         print(f"Get by type error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.put("/api/profile/{user_id}")
+def update_profile(
+    user_id: int,
+    username: Optional[str] = None,
+    bio: Optional[str] = None,
+    profile_picture: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Update user profile"""
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if username is already taken
+        if username and username != user.username:
+            existing = db.query(User).filter(User.username == username).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Username already taken")
+            user.username = username
+        
+        if bio is not None:
+            user.bio = bio
+        
+        if profile_picture is not None:
+            user.profile_picture = profile_picture
+        
+        db.commit()
+        db.refresh(user)
+        
+        return {
+            "message": "Profile updated successfully",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "bio": user.bio,
+                "profile_picture": user.profile_picture,
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Update profile error: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 def media_to_dict(media: Media) -> dict:
     """Convert Media object to dictionary"""
     return {
