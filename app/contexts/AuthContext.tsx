@@ -22,6 +22,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  token: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -33,6 +34,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Check if user is logged in on app start
@@ -71,7 +73,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Store user data
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      await AsyncStorage.setItem('authToken', data.access_token);
+
       setUser(data.user);
+      setToken(data.access_token);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -143,6 +148,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+        token,
         loading,
         login,
         signup,
