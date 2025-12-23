@@ -1,16 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+
 
 interface MediaInteractionModalProps {
   visible: boolean;
@@ -29,53 +30,78 @@ export default function MediaInteractionModal({
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+
+  // Load userId from AsyncStorage when modal opens
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const storedUserId = await AsyncStorage.getItem('userId');
+      if (storedUserId) setUserId(Number(storedUserId));
+    };
+    if (visible) fetchUserId();
+  }, [visible]);
 
   const getAuthToken = async () => {
     return await AsyncStorage.getItem('authToken');
   };
 
   const handleAddToList = async (listType: 'favorites' | 'reading') => {
-    setLoading(true);
-    try {
-      const token = await getAuthToken();
-      if (!token) {
-        Alert.alert('Error', 'Please log in first');
-        return;
-      }
+  setLoading(true);
+  try {
+    // Get token and user from AsyncStorage
+    const token = await AsyncStorage.getItem('authToken');
+    const userJson = await AsyncStorage.getItem('user');
 
-      const endpoint = listType === 'favorites' 
-        ? '/api/favorites/add' 
-        : '/api/reading-progress/add';
-
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ media_id: mediaId }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert(
-          'Success', 
-          listType === 'favorites' 
-            ? 'Added to favorites!' 
-            : 'Added to reading list!'
-        );
-      } else {
-        Alert.alert('Error', data.detail || 'Failed to add');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Network error occurred');
-    } finally {
+    if (!token || !userJson) {
+      Alert.alert('Error', 'Please log in first');
       setLoading(false);
+      return;
     }
-  };
+
+    const user = JSON.parse(userJson);
+    const userId = user.id;
+
+    // Build endpoint
+    const endpoint =
+      listType === 'favorites'
+        ? `/api/favorites/${userId}/add/${mediaId}`
+        : `/api/reading-progress/${userId}/add/${mediaId}`;
+
+    const response = await fetch(`http://localhost:3000${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ media_id: mediaId }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      Alert.alert(
+        'Success',
+        listType === 'favorites'
+          ? 'Added to favorites!'
+          : 'Added to reading list!'
+      );
+    } else {
+      Alert.alert('Error', data.detail || 'Failed to add');
+    }
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'Network error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSubmitReview = async () => {
+    if (!userId) {
+      Alert.alert('Error', 'Please log in first');
+      return;
+    }
+
     if (rating === 0) {
       Alert.alert('Error', 'Please select a rating');
       return;
@@ -97,7 +123,7 @@ export default function MediaInteractionModal({
         },
         body: JSON.stringify({
           media_id: mediaId,
-          rating: rating,
+          rating,
           review_text: reviewText,
         }),
       });
@@ -119,34 +145,21 @@ export default function MediaInteractionModal({
     }
   };
 
-  const renderStars = () => {
-    return (
-      <View style={styles.starsContainer}>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
-          <TouchableOpacity
-            key={star}
-            onPress={() => setRating(star)}
-            style={styles.starButton}
-          >
-            <Text style={[
-              styles.star,
-              rating >= star && styles.starFilled
-            ]}>
-              ★
-            </Text>
+  const renderStars = () => (
+    <View style={styles.starsContainer}>
+      {[...Array(10)].map((_, i) => {
+        const star = i + 1;
+        return (
+          <TouchableOpacity key={star} onPress={() => setRating(star)} style={styles.starButton}>
+            <Text style={[styles.star, rating >= star && styles.starFilled]}>★</Text>
           </TouchableOpacity>
-        ))}
-      </View>
-    );
-  };
+        );
+      })}
+    </View>
+  );
 
   return (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
-    >
+    <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>{mediaTitle}</Text>
@@ -154,32 +167,16 @@ export default function MediaInteractionModal({
           {/* Tabs */}
           <View style={styles.tabsContainer}>
             <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === 'actions' && styles.tabActive
-              ]}
+              style={[styles.tab, activeTab === 'actions' && styles.tabActive]}
               onPress={() => setActiveTab('actions')}
             >
-              <Text style={[
-                styles.tabText,
-                activeTab === 'actions' && styles.tabTextActive
-              ]}>
-                Actions
-              </Text>
+              <Text style={[styles.tabText, activeTab === 'actions' && styles.tabTextActive]}>Actions</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === 'review' && styles.tabActive
-              ]}
+              style={[styles.tab, activeTab === 'review' && styles.tabActive]}
               onPress={() => setActiveTab('review')}
             >
-              <Text style={[
-                styles.tabText,
-                activeTab === 'review' && styles.tabTextActive
-              ]}>
-                Review
-              </Text>
+              <Text style={[styles.tabText, activeTab === 'review' && styles.tabTextActive]}>Review</Text>
             </TouchableOpacity>
           </View>
 
@@ -204,17 +201,13 @@ export default function MediaInteractionModal({
                   <Text style={styles.actionText}>Add to Reading List</Text>
                 </TouchableOpacity>
 
-                {loading && (
-                  <ActivityIndicator size="small" color="#3b82f6" style={styles.loader} />
-                )}
+                {loading && <ActivityIndicator size="small" color="#3b82f6" style={styles.loader} />}
               </View>
             ) : (
               <View style={styles.reviewContainer}>
                 <Text style={styles.label}>Rating (out of 10)</Text>
                 {renderStars()}
-                <Text style={styles.ratingText}>
-                  {rating > 0 ? `${rating}/10` : 'Select a rating'}
-                </Text>
+                <Text style={styles.ratingText}>{rating > 0 ? `${rating}/10` : 'Select a rating'}</Text>
 
                 <Text style={styles.label}>Review (Optional)</Text>
                 <TextInput
@@ -228,27 +221,17 @@ export default function MediaInteractionModal({
                 />
 
                 <TouchableOpacity
-                  style={[
-                    styles.submitButton,
-                    loading && styles.submitButtonDisabled
-                  ]}
+                  style={[styles.submitButton, loading && styles.submitButtonDisabled]}
                   onPress={handleSubmitReview}
                   disabled={loading}
                 >
-                  {loading ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.submitButtonText}>Submit Review</Text>
-                  )}
+                  {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitButtonText}>Submit Review</Text>}
                 </TouchableOpacity>
               </View>
             )}
           </ScrollView>
 
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={onClose}
-          >
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
@@ -256,6 +239,7 @@ export default function MediaInteractionModal({
     </Modal>
   );
 }
+
 
 const styles = StyleSheet.create({
   modalContainer: {

@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
+    DATABASE_URL: str
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_NAME: str = "manhwa_app"

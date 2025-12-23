@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Numeric, ARRAY, ForeignKey, CheckConstraint, UniqueConstraint, DECIMAL
+from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, ForeignKey, CheckConstraint, UniqueConstraint, DECIMAL
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -20,6 +20,13 @@ class User(Base):
     likes = relationship("MediaLike", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan")
+    
+    # Favorites relationship (many-to-many via MediaLike)
+    favorites = relationship(
+        "Media",
+        secondary="media_likes",
+        back_populates="liked_by"
+    )
     
     # Followers (users following this user)
     followers = relationship(
@@ -44,9 +51,9 @@ class Media(Base):
     title_romaji = Column(String(255), nullable=False)
     title_english = Column(String(255))
     title_native = Column(String(255))
-    type = Column(String(20), nullable=False, index=True)  # MANGA, MANHWA, MANHUA, ANIME
-    format = Column(String(20))  # TV, MOVIE, OVA, SPECIAL, MANGA, ONE_SHOT
-    status = Column(String(20), index=True)  # FINISHED, RELEASING, NOT_YET_RELEASED, CANCELLED
+    type = Column(String(20), nullable=False, index=True)
+    format = Column(String(20))
+    status = Column(String(20), index=True)
     description = Column(Text)
     start_date = Column(DateTime)
     end_date = Column(DateTime)
@@ -55,13 +62,13 @@ class Media(Base):
     episodes = Column(Integer)
     cover_image = Column(String(500))
     banner_image = Column(String(500))
-    genres = Column(ARRAY(String))  # PostgreSQL array
+    genres = Column(ARRAY(String))
     tags = Column(ARRAY(String))
     average_score = Column(DECIMAL(4, 2), index=True)
     popularity = Column(Integer, default=0, index=True)
     favorites = Column(Integer, default=0)
-    source = Column(String(50))  # ORIGINAL, MANGA, LIGHT_NOVEL, WEB_NOVEL
-    country_of_origin = Column(String(2))  # JP, KR, CN
+    source = Column(String(50))
+    country_of_origin = Column(String(2))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
     
@@ -70,6 +77,14 @@ class Media(Base):
     likes = relationship("MediaLike", back_populates="media", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="media", cascade="all, delete-orphan")
     activities = relationship("UserActivity", back_populates="media", cascade="all, delete-orphan")
+    
+    # Reverse relationship for favorites
+    liked_by = relationship(
+        "User",
+        secondary="media_likes",
+        back_populates="favorites"
+    )
+
 
 class UserMediaList(Base):
     __tablename__ = "user_media_lists"

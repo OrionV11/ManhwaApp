@@ -2,6 +2,21 @@ import json
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import Media
+from datetime import datetime
+
+def parse_year_to_date(year_released):
+    """Convert year to a date object"""
+    if not year_released:
+        return None
+    try:
+        # If it's already a full date string
+        if isinstance(year_released, str) and '-' in year_released:
+            return datetime.strptime(year_released, '%Y-%m-%d').date()
+        # If it's just a year
+        year = int(year_released)
+        return datetime(year, 1, 1).date()
+    except (ValueError, TypeError):
+        return None
 
 def import_data():
     db = SessionLocal()
@@ -24,6 +39,9 @@ def import_data():
                 # Check if media already exists
                 existing = db.query(Media).filter(Media.id == anime['id']).first()
                 
+                # Parse the date
+                start_date = parse_year_to_date(anime.get('year_released'))
+                
                 if existing:
                     # Update existing record
                     existing.title_english = anime.get('title_english')
@@ -32,6 +50,7 @@ def import_data():
                     existing.popularity = anime.get('popularity_rank', 0)
                     existing.episodes = anime.get('episodes')
                     existing.status = anime.get('status')
+                    existing.start_date = start_date
                 else:
                     # Create new record - map old fields to new schema
                     new_media = Media(
@@ -40,10 +59,10 @@ def import_data():
                         title_english=anime.get('title_english'),
                         title_native=None,
                         type='ANIME',
-                        format=None,  # You may need to map this from your data
+                        format=None,
                         status=anime.get('status'),
                         description=anime.get('description'),
-                        start_date=None,  # Parse from year_released if needed
+                        start_date=start_date,
                         end_date=None,
                         chapters=None,
                         volumes=None,
@@ -56,7 +75,7 @@ def import_data():
                         popularity=anime.get('popularity_rank', 0),
                         favorites=0,
                         source=anime.get('source'),
-                        country_of_origin='JP'  # Assuming Japanese
+                        country_of_origin='JP'
                     )
                     db.add(new_media)
                 
@@ -86,6 +105,9 @@ def import_data():
                 # Check if media already exists
                 existing = db.query(Media).filter(Media.id == manga['id']).first()
                 
+                # Parse the date
+                start_date = parse_year_to_date(manga.get('year_released'))
+                
                 if existing:
                     # Update existing record
                     existing.title_english = manga.get('title_english')
@@ -94,11 +116,11 @@ def import_data():
                     existing.popularity = manga.get('popularity_rank', 0)
                     existing.chapters = manga.get('chapters')
                     existing.status = manga.get('status')
+                    existing.start_date = start_date
                 else:
                     # Determine if it's MANGA, MANHWA, or MANHUA
-                    # You might need to check genres or source for this
-                    media_type = 'MANGA'  # Default
-                    country = 'JP'  # Default
+                    media_type = 'MANGA'
+                    country = 'JP'
                     
                     # Try to detect manhwa/manhua from genres or title
                     genres_lower = [g.lower() for g in manga.get('genres', [])]
@@ -119,7 +141,7 @@ def import_data():
                         format='MANGA',
                         status=manga.get('status'),
                         description=manga.get('description'),
-                        start_date=None,
+                        start_date=start_date,
                         end_date=None,
                         chapters=manga.get('chapters'),
                         volumes=None,
@@ -159,6 +181,10 @@ def import_data():
         print(f"Anime: {anime_success}/{len(anime_data)} successful ({anime_errors} errors)")
         print(f"Manga: {manga_success}/{len(manga_data)} successful ({manga_errors} errors)")
         print(f"Total: {anime_success + manga_success} records imported")
+        
+        # Check dates
+        with_dates = db.query(Media).filter(Media.start_date.isnot(None)).count()
+        print(f"Records with dates: {with_dates}")
         
     except FileNotFoundError as e:
         print(f"Error: Could not find data files - {e}")
