@@ -41,11 +41,13 @@ def remove_favorite(db: Session, user_id: int, media_id: int) -> Dict:
     return {"message": "Media removed from favorites", "user_id": user.id, "media_id": media.id}
 
 
-def get_user_favorites(db: Session, user_id: int) -> List[dict]:
-    """Get all favorites for a user"""
+def get_user_favorites(db: Session, user_id: int) -> list[Media]:
+    """
+    Returns a list of Media objects favorited by the user.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise ValueError(f"User with id {user_id} not found")
 
-    # Use media_to_dict to serialize
-    return [media_to_dict(media) for media in user.favorites]
+    # Using cleaned 'favorites' relationship
+    return user.favorites

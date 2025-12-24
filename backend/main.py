@@ -7,7 +7,8 @@ from routes.media import router as media_router
 from routes.auth import router as auth_router
 from routes.profile import router as profile_router
 from routes.favorites import router as favorites_router
-from routes.reading_progress  import router as reading_progress_router
+from routes.reading_progress import router as reading_progress_router
+from routes.stats import router as stats_router 
 
 app = FastAPI(title="Manhwa App API")
 
@@ -26,11 +27,12 @@ app.add_middleware(
 )
 
 # --------- Routers ----------
-app.include_router(media_router)
-app.include_router(auth_router)
-app.include_router(profile_router)
-app.include_router(favorites_router)
-app.include_router(reading_progress_router)
+app.include_router(media_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
+app.include_router(profile_router, prefix="/api")
+app.include_router(favorites_router, prefix="/api")
+app.include_router(reading_progress_router, prefix="/api")
+app.include_router(stats_router, prefix="/api")
 
 # --------- Health ----------
 @app.get("/api/health")

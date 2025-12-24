@@ -9,7 +9,7 @@ from database import get_db
 from models import Media
 from controllers.media import media_to_dict, search_media, get_trending_media, get_media_by_id
 
-router = APIRouter(prefix="/api/media", tags=["media"])
+router = APIRouter(prefix="/media", tags=["media"])
 
 
 # -------------------- SEARCH --------------------

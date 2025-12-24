@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from controllers import favorites
 
-router = APIRouter(prefix="/api/favorites", tags=["favorites"])
+router = APIRouter(prefix="/favorites", tags=["favorites"])
 
 
 @router.put("/{user_id}/add/{media_id}")

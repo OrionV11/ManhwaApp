@@ -3,7 +3,7 @@ from schemas.entries import EntryRequest
 from middleware.auth import get_current_user
 from controllers import entries
 
-router = APIRouter(prefix="/api/entries", tags=["entries"])
+router = APIRouter(prefix="/entries", tags=["entries"])
 
 @router.post("/")
 def add_entry(data: EntryRequest, user_id: str = Depends(get_current_user)):

@@ -31,8 +31,8 @@ export interface User {
     id: number;
     username: string;
     email: string;
-    profile_picture: string | null;
-    bio: string | null;
+    profile_picture?: string | null;
+    bio?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -104,6 +104,14 @@ export interface UserActivity {
     created_at: string;
     user?: User;
     media?: Media;
+
+}
+
+export interface UserActivityStats {
+    reading: number;
+    completed: number;
+    favorites: number;
+    followers: number;
 }
 
 // API Response types

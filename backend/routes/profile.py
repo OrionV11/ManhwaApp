@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from typing import Optional
 from controllers import profile
 
-router = APIRouter(prefix="/api/profile", tags=["profile"])
+router = APIRouter(prefix="/profile", tags=["profile"])
 
 @router.put("/{user_id}")
 def update_profile(
