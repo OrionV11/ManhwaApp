@@ -4,10 +4,29 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function ProfileScreen() {
   const { user, loading } = useAuth();
+  //Mock User
+  const mockUser = {
+    id: 1,
+    username: 'TestUser',
+    email: 'test@example.com',
+    profile_picture: null,
+    bio: 'Test bio',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
 
-  if (loading) return <ActivityIndicator style={{ marginTop: 50 }} />;
+  console.log('🔵 ProfileScreen - loading:', loading);
+  console.log('🔵 ProfileScreen - user:', user);
 
-  if (!user) return null; // auth screen already handled elsewhere
+  if (loading) {
+    console.log('⏳ Showing loading spinner');
+    return <ActivityIndicator style={{ marginTop: 50 }} />;
+  }
 
-  return <ProfileView user={user} />;
+  const displayUser = user || mockUser;
+
+
+  console.log('✅ Rendering ProfileView with user:', displayUser.username);
+
+  return <ProfileView user={displayUser} />;
 }

@@ -12,6 +12,16 @@ import {
   View
 } from 'react-native';
 
+/* 🔧 MOCK SETUP: existing DB user */
+const mockUser = {
+  id: 1,
+  username: 'TestUser',
+  email: 'test@example.com',
+  profile_picture: null,
+  bio: 'Test bio',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
 
 interface MediaInteractionModalProps {
   visible: boolean;
@@ -26,77 +36,102 @@ export default function MediaInteractionModal({
   mediaId, 
   mediaTitle 
 }: MediaInteractionModalProps) {
+
   const [activeTab, setActiveTab] = useState<'actions' | 'review'>('actions');
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
+
+  /* ✅ user already exists in DB */
+  const [userId, setUserId] = useState<number | null>(1);
+
+  /* 🔧 MOCK SETUP: seed AsyncStorage once */
+  useEffect(() => {
+    const seedMockUser = async () => {
+      const existingUser = await AsyncStorage.getItem('user');
+      if (!existingUser) {
+        await AsyncStorage.setItem('user', JSON.stringify(mockUser));
+        await AsyncStorage.setItem('userId', String(mockUser.id));
+      }
+    };
+    seedMockUser();
+  }, []);
 
   // Load userId from AsyncStorage when modal opens
+  /*
   useEffect(() => {
     const fetchUserId = async () => {
       const storedUserId = await AsyncStorage.getItem('userId');
-      if (storedUserId) setUserId(Number(storedUserId));
+      const storeUser = await AsyncStorage.getItem('user');
+      console.log('Fetched userId from AsyncStorage:', storedUserId);
+      console.log('Fetched user from AsyncStorage:', storeUser);
+
+      if (storedUserId) {
+        console.log('Found userId:', storedUserId);
+        setUserId(Number(storedUserId));
+      } else if (storeUser) {
+        const user = JSON.parse(storeUser);
+        console.log('Parsed user object:', user);
+        setUserId(user.id);
+      } else {
+        console.log('No userId or user found in AsyncStorage');
+        setUserId(null);
+      }
     };
     if (visible) fetchUserId();
   }, [visible]);
-
-  const getAuthToken = async () => {
-    return await AsyncStorage.getItem('authToken');
-  };
+  */
 
   const handleAddToList = async (listType: 'favorites' | 'reading') => {
-  setLoading(true);
-  try {
-    // Get token and user from AsyncStorage
-    const token = await AsyncStorage.getItem('authToken');
-    const userJson = await AsyncStorage.getItem('user');
+    setLoading(true);
+    try {
+      const userJson = await AsyncStorage.getItem('user');
+      if (!userJson) {
+        Alert.alert('Error', 'Please log in first');
+        setLoading(false);
+        return;
+      }
 
-    if (!token || !userJson) {
-      Alert.alert('Error', 'Please log in first');
-      setLoading(false);
-      return;
-    }
+      const user = JSON.parse(userJson);
+      setUserId(user.id);
 
-    const user = JSON.parse(userJson);
-    const userId = user.id;
-
-    // Build endpoint
-    const endpoint =
-      listType === 'favorites'
-        ? `/api/favorites/${userId}/add/${mediaId}`
-        : `/api/reading-progress/${userId}/add/${mediaId}`;
-
-    const response = await fetch(`http://localhost:3000${endpoint}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ media_id: mediaId }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      Alert.alert(
-        'Success',
+      const endpoint =
         listType === 'favorites'
-          ? 'Added to favorites!'
-          : 'Added to reading list!'
-      );
-    } else {
-      Alert.alert('Error', data.detail || 'Failed to add');
+          ? `/api/favorites/${user.id}/add/${mediaId}`
+          : `/api/reading-progress/${user.id}/add/${mediaId}`;
+
+      const response = await fetch(`http://localhost:3000${endpoint}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          // Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ media_id: mediaId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert(
+          'Success',
+          listType === 'favorites'
+            ? 'Added to favorites!'
+            : 'Added to reading list!'
+        );
+      } else {
+        Alert.alert('Error', data.detail || 'Failed to add');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Network error occurred');
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error(error);
-    Alert.alert('Error', 'Network error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleSubmitReview = async () => {
+    console.log('=== SUBMIT REVIEW STARTED ===');
+
     if (!userId) {
       Alert.alert('Error', 'Please log in first');
       return;
@@ -107,26 +142,40 @@ export default function MediaInteractionModal({
       return;
     }
 
+    if (!reviewText.trim()) {
+      Alert.alert('Error', 'Please write a review');
+      return;
+    }
+
     setLoading(true);
     try {
+      /*
       const token = await getAuthToken();
       if (!token) {
         Alert.alert('Error', 'Please log in first');
+        setLoading(false);
         return;
       }
+      */
 
-      const response = await fetch('http://localhost:3000/api/reviews/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          media_id: mediaId,
-          rating,
-          review_text: reviewText,
-        }),
-      });
+      const requestBody = {
+        media_id: mediaId,
+        content: reviewText,
+        rating: rating,
+        title: null,
+      };
+
+      const response = await fetch(
+        `http://localhost:3000/api/reviews?user_id=${userId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // 'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       const data = await response.json();
 
@@ -136,9 +185,10 @@ export default function MediaInteractionModal({
         setReviewText('');
         onClose();
       } else {
-        Alert.alert('Error', data.detail || 'Failed to submit review');
+        Alert.alert('Error', data.detail || JSON.stringify(data));
       }
     } catch (error) {
+      console.error(error);
       Alert.alert('Error', 'Network error occurred');
     } finally {
       setLoading(false);
@@ -150,8 +200,14 @@ export default function MediaInteractionModal({
       {[...Array(10)].map((_, i) => {
         const star = i + 1;
         return (
-          <TouchableOpacity key={star} onPress={() => setRating(star)} style={styles.starButton}>
-            <Text style={[styles.star, rating >= star && styles.starFilled]}>★</Text>
+          <TouchableOpacity
+            key={star}
+            onPress={() => setRating(star)}
+            style={styles.starButton}
+          >
+            <Text style={[styles.star, rating >= star && styles.starFilled]}>
+              ★
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -164,19 +220,22 @@ export default function MediaInteractionModal({
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>{mediaTitle}</Text>
 
-          {/* Tabs */}
           <View style={styles.tabsContainer}>
             <TouchableOpacity
               style={[styles.tab, activeTab === 'actions' && styles.tabActive]}
               onPress={() => setActiveTab('actions')}
             >
-              <Text style={[styles.tabText, activeTab === 'actions' && styles.tabTextActive]}>Actions</Text>
+              <Text style={[styles.tabText, activeTab === 'actions' && styles.tabTextActive]}>
+                Actions
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tab, activeTab === 'review' && styles.tabActive]}
               onPress={() => setActiveTab('review')}
             >
-              <Text style={[styles.tabText, activeTab === 'review' && styles.tabTextActive]}>Review</Text>
+              <Text style={[styles.tabText, activeTab === 'review' && styles.tabTextActive]}>
+                Review
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -201,31 +260,34 @@ export default function MediaInteractionModal({
                   <Text style={styles.actionText}>Add to Reading List</Text>
                 </TouchableOpacity>
 
-                {loading && <ActivityIndicator size="small" color="#3b82f6" style={styles.loader} />}
+                {loading && <ActivityIndicator size="small" color="#3b82f6" />}
               </View>
             ) : (
               <View style={styles.reviewContainer}>
                 <Text style={styles.label}>Rating (out of 10)</Text>
                 {renderStars()}
-                <Text style={styles.ratingText}>{rating > 0 ? `${rating}/10` : 'Select a rating'}</Text>
+                <Text style={styles.ratingText}>
+                  {rating > 0 ? `${rating}/10` : 'Select a rating'}
+                </Text>
 
-                <Text style={styles.label}>Review (Optional)</Text>
+                <Text style={styles.label}>Review</Text>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Write your review here..."
                   multiline
-                  numberOfLines={6}
                   value={reviewText}
                   onChangeText={setReviewText}
-                  textAlignVertical="top"
                 />
 
                 <TouchableOpacity
-                  style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+                  style={styles.submitButton}
                   onPress={handleSubmitReview}
                   disabled={loading}
                 >
-                  {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitButtonText}>Submit Review</Text>}
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>Submit Review</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             )}
@@ -240,134 +302,30 @@ export default function MediaInteractionModal({
   );
 }
 
-
 const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#222',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  tabActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#3b82f6',
-  },
-  tabText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  tabTextActive: {
-    color: '#3b82f6',
-    fontWeight: 'bold',
-  },
-  contentContainer: {
-    maxHeight: 400,
-  },
-  actionsContainer: {
-    gap: 12,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    gap: 12,
-  },
-  actionIcon: {
-    fontSize: 24,
-  },
-  actionText: {
-    fontSize: 16,
-    color: '#222',
-    fontWeight: '500',
-  },
-  loader: {
-    marginTop: 12,
-  },
-  reviewContainer: {
-    gap: 16,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
-  },
-  starsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  starButton: {
-    padding: 4,
-  },
-  star: {
-    fontSize: 32,
-    color: '#d1d5db',
-  },
-  starFilled: {
-    color: '#fbbf24',
-  },
-  ratingText: {
-    fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: -8,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    minHeight: 120,
-  },
-  submitButton: {
-    backgroundColor: '#3b82f6',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#9ca3af',
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    marginTop: 16,
-    padding: 12,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#3b82f6',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  contentContainer: { maxHeight: 400 },
+  modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  tabsContainer: { flexDirection: 'row', marginBottom: 16 },
+  tab: { flex: 1, padding: 12, alignItems: 'center' },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: '#3b82f6' },
+  tabText: { color: '#666' },
+  tabTextActive: { color: '#3b82f6', fontWeight: 'bold' },
+  actionsContainer: { gap: 12 },
+  actionButton: { flexDirection: 'row', padding: 16, backgroundColor: '#f3f4f6', borderRadius: 12 },
+  actionIcon: { fontSize: 24 },
+  actionText: { fontSize: 16, marginLeft: 12 },
+  reviewContainer: { gap: 16 },
+  label: { fontWeight: '600' },
+  starsContainer: { flexDirection: 'row', flexWrap: 'wrap' },
+  starButton: { padding: 4 },
+  star: { fontSize: 32, color: '#d1d5db' },
+  starFilled: { color: '#fbbf24' },
+  ratingText: { textAlign: 'center' },
+  textInput: { borderWidth: 1, borderRadius: 8, padding: 12, minHeight: 120 },
+  submitButton: { backgroundColor: '#3b82f6', padding: 16, borderRadius: 8, alignItems: 'center' },
+  submitButtonText: { color: '#fff', fontWeight: 'bold' },
+  closeButton: { padding: 12, alignItems: 'center' },
+  closeButtonText: { color: '#3b82f6', fontWeight: 'bold' },
 });
