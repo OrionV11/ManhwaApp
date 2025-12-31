@@ -29,50 +29,101 @@ type Props = {
 };
 
 export default function ActivityView({ user }: Props) {
+  const [reviews, setReviews] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [tab, setTab] = useState<'You' | 'Friends' | 'Global'>('You');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Single useEffect that handles all tabs
   useEffect(() => {
-    fetchTab(tab);
-  }, [tab]);
+    const fetchTabData = async () => {
+      setLoading(true);
 
-  const fetchTab = async (tabName: string) => {
-    setLoading(true);
-    let url = '';
+      try {
+        if (tab === 'You') {
+          // Fetch both reviews and favorites for "You" tab
+          const [reviewRes, favoritesRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/reviews/user/${user.id}`),
+            fetch(`${API_BASE_URL}/api/favorites/${user.id}`)
+          ]);
 
-    if (tabName === 'You') {
-      url = `/api/reviews/user/${user.id}`;
-    } else if (tabName === 'Friends') {
-      url = `/api/activity/feed?user_id=${user.id}`;
-    } else if (tabName === 'Global') {
-      url = `/api/activity/global`;
-    } else {
-      setLoading(false);
-      return;
-    }
+          const reviewsData = await reviewRes.json();
+          const favoritesData = await favoritesRes.json();
 
-    try {
-      const res = await fetch(`${API_BASE_URL}${url}`);
-      if (res.ok) {
-        const data = await res.json();
-        setActivities(data);
+          setReviews(reviewsData);
+          setFavorites(favoritesData);
+
+          const formattedActivities: Activity[] = [
+          ...reviewsData.map((review: any) => ({
+            activity_id: review.id,
+            activity_type: 'review',
+            details: review.review_text,
+            created_at: review.created_at,
+            media: {
+              id: review.media_id,
+              title_romaji: review.title_romaji,
+              title_english: review.title_english,
+              cover_image: review.cover_image,
+              type: review.type || 'ANIME'
+            },
+            user: {
+              id: user.id,
+              username: user.username,
+              profile_picture: user.profile_picture
+            }
+          })),
+          ...favoritesData.map((fav: any) => ({
+            activity_id: fav.id,
+            activity_type: 'favorite',
+            created_at: fav.created_at || new Date().toISOString(),
+            media: {
+              id: fav.id,
+              title_romaji: fav.title_romaji,
+              title_english: fav.title_english,
+              cover_image: fav.cover_image,
+              type: fav.type || 'ANIME'
+            },
+            user: {
+              id: user.id,
+              username: user.username,
+              profile_picture: user.profile_picture
+            }
+          }))
+        ];
+
+        setActivities(formattedActivities);
+          
+          // Combine into activities format if needed
+          // Or set activities separately based on your ActivityList component
+          
+        } else if (tab === 'Friends') {
+          const res = await fetch(`${API_BASE_URL}/api/activity/feed?user_id=${user.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            setActivities(data);
+          }
+          
+        }
+
+      } catch (error) {
+        console.error(`Error fetching ${tab} data:`, error);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error(`Error fetching ${tabName} activities`, err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchTabData();
+  }, [tab, user.id]); // Refetch when tab or user.id changes
 
   return (
     <View style={styles.container}>
       {/* Tabs */}
       <View style={styles.tabs}>
-        {['You', 'Friends', 'Global'].map(t => (
+        {['You', 'Friends'].map(t => (
           <TouchableOpacity
             key={t}
-            onPress={() => setTab(t as any)}
+            onPress={() => setTab(t as 'You' | 'Friends' | 'Global')}
             style={[styles.tab, tab === t && styles.tabActive]}
           >
             <Text style={tab === t ? styles.tabTextActive : styles.tabText}>
@@ -94,7 +145,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
   tabs: { 
     flexDirection: 'row', 
     borderBottomWidth: 1, 
@@ -117,7 +167,6 @@ const styles = StyleSheet.create({
     color: '#4c00b4', 
     fontWeight: '600' 
   },
-
   scrollView: {
     flex: 1,
   },
