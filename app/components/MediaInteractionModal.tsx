@@ -37,10 +37,12 @@ export default function MediaInteractionModal({
   mediaTitle 
 }: MediaInteractionModalProps) {
 
-  const [activeTab, setActiveTab] = useState<'actions' | 'review'>('actions');
+  const [activeTab, setActiveTab] = useState<'actions' | 'review'| 'reviews'>('actions');
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [likedReview, setLikedReview] = useState(0);
 
   /* ✅ user already exists in DB */
   const [userId, setUserId] = useState<number | null>(1);
@@ -81,6 +83,25 @@ export default function MediaInteractionModal({
     if (visible) fetchUserId();
   }, [visible]);
   */
+
+  const getMediaReviews = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:3000/api/reviews/media/${mediaId}`)
+
+      if(!response.ok) {
+        throw new Error('Failed to fetch reviews');
+      }
+
+      const reviewsData = await response.json();
+      setReviews(reviewsData)
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      Alert.alert('Error', 'Failed to load reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddToList = async (listType: 'favorites' | 'reading') => {
     setLoading(true);
@@ -129,6 +150,50 @@ export default function MediaInteractionModal({
     }
   };
 
+  const handleLikeReview = async (reviewId: number) => {
+  if (!userId) {
+    Alert.alert('Error', 'Please log in first');
+    return;
+  }
+
+  setLoading(true);
+  try {
+
+  
+
+    const response = await fetch(
+      `http://localhost:3000/api/reviews/${reviewId}/like?user_id=${userId}`,
+      {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+      }
+    );
+
+    const reviewsData = await response.json();
+
+    console.log('Fetched reviews JSON:', reviewsData);
+
+    setReviews(Array.isArray(reviewsData.reviews) ? reviewsData.reviews : []);
+
+    if (response.ok) {
+      Alert.alert('Success', 'Review liked!');
+
+
+      await getMediaReviews();
+      
+    } else {
+      Alert.alert('Error', reviewsData.detail || 'Failed to like review');
+    }
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'Network error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   const handleSubmitReview = async () => {
     console.log('=== SUBMIT REVIEW STARTED ===');
 
@@ -149,6 +214,18 @@ export default function MediaInteractionModal({
 
     setLoading(true);
     try {
+      const cleanRating = Number(rating);
+
+    // Prepare request body exactly how FastAPI expects
+      const requestBody = {
+        user_id: Number(userId),
+        media_id: Number(mediaId),
+        content: reviewText.trim(),
+        rating: cleanRating,
+        title: "", // optional
+    };
+
+    console.log('POST body:', requestBody);
       /*
       const token = await getAuthToken();
       if (!token) {
@@ -158,15 +235,8 @@ export default function MediaInteractionModal({
       }
       */
 
-      const requestBody = {
-        media_id: mediaId,
-        content: reviewText,
-        rating: rating,
-        title: null,
-      };
-
       const response = await fetch(
-        `http://localhost:3000/api/reviews?user_id=${userId}`,
+        `http://localhost:3000/api/reviews`,
         {
           method: 'POST',
           headers: {
@@ -214,6 +284,12 @@ export default function MediaInteractionModal({
     </View>
   );
 
+  useEffect(() => {
+  if (visible && activeTab === 'reviews') {
+    getMediaReviews();
+  }
+}, [visible, activeTab]);
+
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
       <View style={styles.modalContainer}>
@@ -229,6 +305,7 @@ export default function MediaInteractionModal({
                 Actions
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.tab, activeTab === 'review' && styles.tabActive]}
               onPress={() => setActiveTab('review')}
@@ -237,10 +314,19 @@ export default function MediaInteractionModal({
                 Review
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'reviews' && styles.tabActive]}
+              onPress={() => setActiveTab('reviews')}
+            >
+              <Text style={[styles.tabText, activeTab === 'reviews' && styles.tabTextActive]}>
+                Reviews ({reviews.length})
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.contentContainer}>
-            {activeTab === 'actions' ? (
+            {activeTab === 'actions' && (
               <View style={styles.actionsContainer}>
                 <TouchableOpacity
                   style={styles.actionButton}
@@ -262,7 +348,9 @@ export default function MediaInteractionModal({
 
                 {loading && <ActivityIndicator size="small" color="#3b82f6" />}
               </View>
-            ) : (
+            )} 
+            
+            {activeTab === 'review' && (
               <View style={styles.reviewContainer}>
                 <Text style={styles.label}>Rating (out of 10)</Text>
                 {renderStars()}
@@ -289,6 +377,39 @@ export default function MediaInteractionModal({
                     <Text style={styles.submitButtonText}>Submit Review</Text>
                   )}
                 </TouchableOpacity>
+              </View>
+            )} 
+            
+            {activeTab === 'reviews' && (
+              <View style={styles.reviewsListContainer}>
+                {loading ? (
+                  <ActivityIndicator size="small" color="#3b82f6" />
+                ) : reviews.length === 0 ? (
+                  <Text style={styles.noReviewsText}>No reviews yet</Text>
+                ) : (
+                  reviews.map((review) => (
+                    <View key={review.review_id} style={styles.reviewItem}>
+                      <View style={styles.reviewHeader}>
+                        <Text style={styles.reviewUserName}>{review.username}</Text>
+                        <Text style={styles.reviewRating}>⭐ {review.rating}/10</Text>
+                        <Text style={styles.reviewContent}>{review.content}</Text>
+                        <TouchableOpacity onPress={() => {
+                          console.log('Full review object:', review);
+                          console.log('Review ID:', review.review_id);
+                          handleLikeReview(review.review_id);
+                        }}>
+                          <Text> ❤️ Like </Text>
+                        </TouchableOpacity>
+                      </View>
+                      {review.review_text && (
+                        <Text style={styles.reviewText}>{review.review_text}</Text>
+                      )}
+                      <Text style={styles.reviewDate}>
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  ))
+                )}
               </View>
             )}
           </ScrollView>
@@ -328,4 +449,51 @@ const styles = StyleSheet.create({
   submitButtonText: { color: '#fff', fontWeight: 'bold' },
   closeButton: { padding: 12, alignItems: 'center' },
   closeButtonText: { color: '#3b82f6', fontWeight: 'bold' },
+  reviewsListContainer: {
+    gap: 16,
+  },
+  reviewItem: {
+    backgroundColor: '#f9fafb',
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  reviewUserName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#222',
+  },
+  reviewRating: {
+    fontSize: 14,
+    color: '#fbbf24',
+    fontWeight: '600',
+  },
+  reviewText: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
+  },
+  reviewDate: {
+    fontSize: 10,
+    color: '#999',
+  },
+  noReviewsText: {
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 14,
+    paddingVertical: 20,
+  },
+  reviewContent: {
+    width: '100%',
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 15,
+    paddingVertical: 20,
+
+  }
 });

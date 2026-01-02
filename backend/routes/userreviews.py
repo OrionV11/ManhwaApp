@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import Optional
 from pydantic import BaseModel, Field
@@ -15,6 +15,7 @@ router = APIRouter(
 # -------------------------
 
 class ReviewCreate(BaseModel):
+    user_id: int
     media_id: int
     content: str = Field(..., min_length=1)
     rating: Optional[float] = Field(None, ge=0, le=10)
@@ -29,23 +30,28 @@ class ReviewUpdate(BaseModel):
 # Review Routes
 # -------------------------
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
-def create_review(
-    review: ReviewCreate,
-    user_id: int,  # TODO: Replace with authenticated user from token
-    db: Session = Depends(get_db)
-):
-    """Create a new review for a media item"""
+@router.post("", status_code=status.HTTP_201_CREATED)
+async def create_review(review: ReviewCreate, request: Request, db: Session = Depends(get_db)):
+    """
+    Create a new review for a media item.
+    Expects JSON body with user_id, media_id, content, rating, title.
+    """
+    # Debug: log the body received
+    body = await request.json()
+    print("Received JSON body:", body)
+
     try:
-        return user_reviews.add_review(
+        new_review = user_reviews.add_review(
             db=db,
-            user_id=user_id,
+            user_id=review.user_id,
             media_id=review.media_id,
             content=review.content,
             rating=review.rating,
             title=review.title
         )
+        return new_review
     except ValueError as e:
+        print("Add review error:", e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.put("/{review_id}")
