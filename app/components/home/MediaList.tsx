@@ -1,9 +1,10 @@
+//MediaList
 import { StyleSheet } from 'react-native';
-import HomeView from '../components/home/HomeView';
+import Manhwa from '../ManhwaFetch';
 
 
-export default function Home() {
-  return (<HomeView />);
+export default function HomeMedia() {
+  return (<Manhwa />);
 
 };
 

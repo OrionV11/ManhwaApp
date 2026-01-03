@@ -86,6 +86,29 @@ CREATE TABLE reviews (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+--Folders/Lists
+CREATE TABLE folders (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    is_public BOOLEAN DEFAULT FALSE,
+    likes_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Junction table (connects folders to media)
+CREATE TABLE folder_items (
+    id SERIAL PRIMARY KEY,
+    folder_id INTEGER NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
+    media_id INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,  -- Optional: user's notes about why they added this media
+    UNIQUE(folder_id, media_id)  -- Prevent duplicates
+);
+
+
 -- Review likes
 CREATE TABLE review_likes (
     id SERIAL PRIMARY KEY,
@@ -124,6 +147,10 @@ CREATE INDEX idx_user_follows_following ON user_follows(following_id);
 
 CREATE INDEX idx_reviews_media ON reviews(media_id);
 CREATE INDEX idx_reviews_user ON reviews(user_id);
+
+CREATE INDEX idx_folders_user_id ON folders(user_id);
+CREATE INDEX idx_folder_items_folder_id ON folder_items(folder_id);
+CREATE INDEX idx_folder_items_media_id ON folder_items(media_id);
 
 CREATE INDEX idx_user_activity_user ON user_activity(user_id);
 CREATE INDEX idx_user_activity_created ON user_activity(created_at DESC);

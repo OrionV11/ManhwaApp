@@ -14,7 +14,7 @@ from routes.userreviews import router as userreviews_router
 from routes.followers import router as followers_router
 from routes.user_media_likes import router as user_media_likes_router
 from routes.user_activity import router as user_activity_router
-
+from routes.folders import router as folder_router
 app = FastAPI(title="Manhwa App API")
 
 # Create tables
@@ -43,6 +43,7 @@ app.include_router(userreviews_router, prefix="/api")
 app.include_router(followers_router, prefix="/api")
 app.include_router(user_media_likes_router, prefix="/api")
 app.include_router(user_activity_router, prefix="/api")
+app.include_router(folder_router, prefix="/api")
 
 # --------- Health ----------
 @app.get("/api/health")

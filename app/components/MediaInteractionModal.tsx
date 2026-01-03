@@ -44,10 +44,10 @@ export default function MediaInteractionModal({
   const [reviews, setReviews] = useState<any[]>([]);
   const [likedReview, setLikedReview] = useState(0);
 
-  /* ✅ user already exists in DB */
+  /* user already exists in DB */
   const [userId, setUserId] = useState<number | null>(1);
 
-  /* 🔧 MOCK SETUP: seed AsyncStorage once */
+  /* MOCK SETUP: seed AsyncStorage once */
   useEffect(() => {
     const seedMockUser = async () => {
       const existingUser = await AsyncStorage.getItem('user');
@@ -180,7 +180,7 @@ export default function MediaInteractionModal({
 
 
       await getMediaReviews();
-      
+
     } else {
       Alert.alert('Error', reviewsData.detail || 'Failed to like review');
     }

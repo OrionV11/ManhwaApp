@@ -39,6 +39,41 @@ class MediaLike(Base):
         UniqueConstraint('user_id', 'media_id', name='unique_user_media_like'),
     )
 
+class Folder(Base):
+    __tablename__ = "folders"
+    __table_args__ = {'extend_existing': True}
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    is_public = Column(Boolean, default=False)
+    likes_count = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="folders")
+    items = relationship("FolderItem", back_populates="folder", cascade="all, delete-orphan")
+
+
+class FolderItem(Base):
+    __tablename__ = "folder_items"
+    __table_args__ = (
+        UniqueConstraint('folder_id', 'media_id', name='unique_folder_media'),
+        {'extend_existing': True}
+    )
+    
+    id = Column(Integer, primary_key=True, index=True)
+    folder_id = Column(Integer, ForeignKey("folders.id", ondelete="CASCADE"), nullable=False, index=True)
+    media_id = Column(Integer, ForeignKey("media.id", ondelete="CASCADE"), nullable=False, index=True)
+    added_at = Column(DateTime(timezone=True), server_default=func.now())
+    notes = Column(Text, nullable=True)
+    
+    # Relationships
+    folder = relationship("Folder", back_populates="items")
+
+
 class Review(Base):
     __tablename__ = "reviews"
     
