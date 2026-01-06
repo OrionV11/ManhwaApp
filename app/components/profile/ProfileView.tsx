@@ -1,20 +1,28 @@
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Media, User } from '../../services/Manhwa';
 import MediaList from './MediaList';
 
+
 const API_BASE_URL = 'http://localhost:3000';
 
 type Props = {
   user: User;
+  label: string;
+  onPress: () => void;
 };
 
-export default function ProfileView({ user }: Props) {
+
+
+
+
+export default function ProfileView({ user, label, onPress }: Props) {
   const [tab, setTab] = useState<'reading' | 'completed' | 'favorites'>('reading');
   const [list, setList] = useState<Media[]>([]);
   const [stats, setStats] = useState<any>(null); // stats object from backend
   const [loading, setLoading] = useState(false);
-
+  const router = useRouter();
   // Fetch stats only once on mount
   useEffect(() => {
     fetchStats();
@@ -59,6 +67,8 @@ export default function ProfileView({ user }: Props) {
     }
   };
 
+
+
   return (
     <View>
       {/* Header */}
@@ -79,7 +89,9 @@ export default function ProfileView({ user }: Props) {
       <View style={styles.actions}>
         <Action label="📚 Lists" />
         <Action label="⭐ Favorites" />
-        <Action label="✏️ Reviews" />
+        <button onClick={() => router.push('/(tabs)?tab=reviews')}>
+           ✏️ Reviews
+        </button>
       </View>
 
       {/* Tabs */}

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, ForeignKey, CheckConstraint, UniqueConstraint, DECIMAL
+from sqlalchemy import Column, Boolean, Integer, String, Text, DateTime, ARRAY, ForeignKey, CheckConstraint, UniqueConstraint, DECIMAL
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -181,7 +181,8 @@ class User(Base):
     likes = relationship("MediaLike", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan")
-    
+    folders = relationship("Folder", back_populates="user", cascade="all, delete-orphan")
+
     favorites = relationship(
         "Media",
         secondary="media_likes",

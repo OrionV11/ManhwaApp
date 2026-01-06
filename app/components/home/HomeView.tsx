@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Manhwa from '../ManhwaFetch';
 import HomeTab from './HomeTab';
-import HomeMedia from './MediaList';
 // Import your other tab components when you create them
 import FoldersList from './FolderList';
 import ReviewsList from './ReviewsList';
@@ -13,7 +13,7 @@ export default function HomeView() {
   const renderContent = () => {
     switch (activeTab) {
       case 'media':
-        return <HomeMedia />;
+        return <Manhwa />;
       
       case 'reviews':
         // TODO: Create ReviewsList component
@@ -24,7 +24,7 @@ export default function HomeView() {
         return <FoldersList />
       
       default:
-        return <HomeMedia />;
+        return <Manhwa />;
     }
   };
 
