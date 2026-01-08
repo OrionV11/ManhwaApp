@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ProfileTabs({ activeTab, onChange }: any) {
-  const tabs = ['reading', 'completed', 'favorites'];
+  const tabs = ['reading', 'completed', 'favorites', 'reviews'];
 
   return (
     <View style={styles.container}>

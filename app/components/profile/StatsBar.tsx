@@ -7,6 +7,7 @@ export default function StatsBar({ stats }: any) {
       <Stat label="Completed" value={stats.completed} />
       <Stat label="Favorites" value={stats.favorites} />
       <Stat label="Followers" value={stats.followers} />
+      <Stat label="Reviews" value={stats.reviews} />
     </View>
   );
 }

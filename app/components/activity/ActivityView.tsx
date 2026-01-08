@@ -58,14 +58,14 @@ export default function ActivityView({ user }: Props) {
           ...reviewsData.map((review: any) => ({
             activity_id: review.id,
             activity_type: 'review',
-            details: review.review_text,
+            details: review.content,
             created_at: review.created_at,
             media: {
               id: review.media_id,
-              title_romaji: review.title_romaji,
-              title_english: review.title_english,
-              cover_image: review.cover_image,
-              type: review.type || 'ANIME'
+              title_romaji: review.media.title_romaji,
+              title_english: review.media.title_english,
+              cover_image: review.media.cover_image,
+              type: review.media.type || 'ANIME'
             },
             user: {
               id: user.id,

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Media, User } from '../../services/Manhwa';
 import MediaList from './MediaList';
+import ReviewsList from './ReviewList';
 
 
 const API_BASE_URL = 'http://localhost:3000';
@@ -14,11 +15,8 @@ type Props = {
 };
 
 
-
-
-
 export default function ProfileView({ user, label, onPress }: Props) {
-  const [tab, setTab] = useState<'reading' | 'completed' | 'favorites'>('reading');
+  const [tab, setTab] = useState<'reading' | 'completed' | 'favorites' | 'reviews'>('reading');
   const [list, setList] = useState<Media[]>([]);
   const [stats, setStats] = useState<any>(null); // stats object from backend
   const [loading, setLoading] = useState(false);
@@ -53,9 +51,19 @@ export default function ProfileView({ user, label, onPress }: Props) {
 
     if (tabName === 'favorites') {
       url = `/api/favorites/${user.id}`;
-    } else {
+    } else if (tabName === 'completed') {
+      url = `/api/completed/${user.id}`;
+    } else if (tabName === 'reading') {
       url = `/api/reading-progress/${user.id}`;
+    } else if (tabName === 'reviews') {
+      url = `/api/reviews/user/${user.id}`;
+    } else {
+      console.error('Unknown tab', tabName);
+      setLoading(false);
+      return;
     }
+
+
 
     try {
       const res = await fetch(`${API_BASE_URL}${url}`);
@@ -66,7 +74,6 @@ export default function ProfileView({ user, label, onPress }: Props) {
       setLoading(false);
     }
   };
-
 
 
   return (
@@ -83,20 +90,17 @@ export default function ProfileView({ user, label, onPress }: Props) {
         <Stat label="Completed" value={stats?.stats?.completed || 0} />
         <Stat label="Favorites" value={stats?.stats?.fav_count || 0} />
         <Stat label="Followers" value={stats?.stats?.followers || 0} />
+        <Stat label="Reviews" value={stats?.stats?.reviews || 0} />
       </View>
 
       {/* Buttons */}
       <View style={styles.actions}>
         <Action label="📚 Lists" />
-        <Action label="⭐ Favorites" />
-        <button onClick={() => router.push('/(tabs)?tab=reviews')}>
-           ✏️ Reviews
-        </button>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabs}>
-        {['reading', 'completed', 'favorites'].map(t => (
+        {['reading', 'completed', 'favorites', 'reviews'].map(t => (
           <TouchableOpacity
             key={t}
             onPress={() => setTab(t as any)}
@@ -111,7 +115,8 @@ export default function ProfileView({ user, label, onPress }: Props) {
 
       {/* Content */}
       <ScrollView>
-      <MediaList data={list} loading={loading} tab={tab} />
+      {tab !== 'reviews' && <MediaList data={list} loading={loading} tab={tab} />}
+      {tab === 'reviews' && <ReviewsList data={list as any} loading={loading} tab="reviews" />}
       </ScrollView>
     </View>
   );

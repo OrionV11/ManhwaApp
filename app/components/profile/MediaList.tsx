@@ -1,19 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { Media } from '../../services/Manhwa';
 
 type Props = {
   data: Media[];
   loading: boolean;
-  tab: 'reading' | 'completed' | 'favorites';
+  tab: 'reading' | 'completed' | 'favorites' | 'reviews';
 };
 
 export default function MediaList({ data, loading, tab }: Props) {
