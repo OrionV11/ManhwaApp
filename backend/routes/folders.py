@@ -8,7 +8,7 @@ from schemas.folders import (
 )
 from controllers import folders as folder_controller
 
-router = APIRouter(prefix="/api/folders", tags=["folders"])
+router = APIRouter(prefix="/folders", tags=["folders"])
 
 @router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
 def create_folder(

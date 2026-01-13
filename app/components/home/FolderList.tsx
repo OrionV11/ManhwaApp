@@ -2,15 +2,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const mockUser = {
@@ -94,6 +94,7 @@ export default function FoldersList() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          user_id: userId,
           title: newFolderTitle.trim(),
           description: newFolderDescription.trim() || null,
           is_public: isPublic,
@@ -107,6 +108,7 @@ export default function FoldersList() {
         setIsPublic(false);
         setModalVisible(false);
         fetchFolders(); // Refresh list
+        console.log('Folder Created')
       } else {
         const data = await response.json();
         Alert.alert('Error', data.detail || 'Failed to create folder');

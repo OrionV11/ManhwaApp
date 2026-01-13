@@ -144,6 +144,9 @@ return (
             <Text style={styles.title} numberOfLines={2}>
               {item?.media?.title_english || item?.media?.title_romaji || 'Untitled'}
             </Text>
+            <Text style={styles.content} numberOfLines={6}>
+              {item?.content || 'No Review Text'}
+            </Text>
             <Text style={styles.meta}>{item?.media?.type || item?.type || 'Unknown'}</Text>
           </View>
         </View>
@@ -151,6 +154,8 @@ return (
     }}
   />
 );
+
+}
 
 const styles = StyleSheet.create({
   row: {
@@ -260,4 +265,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  content: {
+    fontSize: 20,
+    color: '#666',
+    fontWeight: '300',
+  }
 });
