@@ -1,14 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const mockUser = {
@@ -21,10 +22,12 @@ const mockUser = {
   updated_at: new Date().toISOString(),
 };
 
+
 export default function ReviewsList() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<number>(1); // Default to 1 for dev
+  const router = useRouter();
 
   // Mock setup: seed AsyncStorage once
   useEffect(() => {
@@ -97,6 +100,11 @@ export default function ReviewsList() {
     );
   };
 
+
+  const handleMediaClick = (mediaId: number) => {
+    router.push(`/media/${mediaId}`)
+  };
+
   if (loading && reviews.length === 0) {
     return (
       <View style={styles.centerContainer}>
@@ -118,6 +126,7 @@ export default function ReviewsList() {
         </View>
       ) : (
         reviews.map((review) => (
+          <TouchableOpacity onPress={() => handleMediaClick(review.media?.id || review.media_id)}>
           <View key={review.review_id} style={styles.reviewCard}>
             
             {/* Media Info */}
@@ -163,6 +172,7 @@ export default function ReviewsList() {
                 <Text style={styles.likes}>❤️ {review.likes_count || 0} likes</Text>
               </View>
             </View>
+            
 
             {/* Actions */}
             <View style={styles.actions}>
@@ -174,6 +184,7 @@ export default function ReviewsList() {
               </TouchableOpacity>
             </View>
           </View>
+          </TouchableOpacity>
         ))
       )}
     </ScrollView>

@@ -154,8 +154,7 @@ export default function FoldersList() {
   };
 
   const handleOpenFolder = (folderId: number) => {
-    // Navigate to folder detail page
-    //router.push(`/folders/${folderId}`);
+    router.push(`/folders/${folderId}`);
   };
 
   if (loading && folders.length === 0) {
