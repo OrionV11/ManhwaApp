@@ -28,5 +28,5 @@ export default function ProfileScreen() {
 
   console.log('✅ Rendering ProfileView with user:', displayUser.username);
 
-  return <ProfileView user={displayUser} />;
+  return <ProfileView user={displayUser} label={''} />;
 }

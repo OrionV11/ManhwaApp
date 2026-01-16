@@ -6,6 +6,7 @@ import {
   Image,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { Media } from '../../services/Manhwa';
@@ -14,9 +15,10 @@ type Props = {
   data: Media[];
   loading: boolean;
   tab: 'reading' | 'completed' | 'favorites' | 'reviews';
+  onMediaClick: (mediaId: number) => void;
 };
 
-export default function MediaList({ data, loading, tab }: Props) {
+export default function MediaList({ data, loading, tab, onMediaClick }: Props) {
   if (loading) {
     return <ActivityIndicator style={{ marginTop: 30 }} />;
   }
@@ -38,6 +40,7 @@ export default function MediaList({ data, loading, tab }: Props) {
       }
       scrollEnabled={false}
       renderItem={({ item }) => (
+        <TouchableOpacity onPress={() => onMediaClick(item.id)}>
         <View style={styles.row}>
           {item.cover_image ? (
             <Image source={{ uri: item.cover_image }} style={styles.cover} />
@@ -51,6 +54,7 @@ export default function MediaList({ data, loading, tab }: Props) {
             <Text style={styles.meta}>{item.type}</Text>
           </View>
         </View>
+      </TouchableOpacity>
       )}
     />
   );

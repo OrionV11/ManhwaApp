@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { Media, User } from '../../services/Manhwa';
 import MediaList from './MediaList';
 import ReviewsList from './ReviewList';
+import SettingsModal from './SettingsModal';
 
 
 const API_BASE_URL = 'http://localhost:3000';
@@ -11,15 +12,16 @@ const API_BASE_URL = 'http://localhost:3000';
 type Props = {
   user: User;
   label: string;
-  onPress: () => void;
+  
 };
 
 
-export default function ProfileView({ user, label, onPress }: Props) {
+export default function ProfileView({ user, label }: Props) {
   const [tab, setTab] = useState<'reading' | 'completed' | 'favorites' | 'reviews'>('reading');
   const [list, setList] = useState<Media[]>([]);
   const [stats, setStats] = useState<any>(null); // stats object from backend
   const [loading, setLoading] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
   const router = useRouter();
   // Fetch stats only once on mount
   useEffect(() => {
@@ -30,6 +32,10 @@ export default function ProfileView({ user, label, onPress }: Props) {
   useEffect(() => {
     fetchTab(tab);
   }, [tab]);
+
+  const handleMediaClick = (mediaId: number) => {
+    router.push(`/media/${mediaId}`)
+  };
 
   const fetchStats = async () => {
     try {
@@ -77,7 +83,7 @@ export default function ProfileView({ user, label, onPress }: Props) {
 
 
   return (
-    <View>
+    <ScrollView>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.username}>{user.username}</Text>
@@ -91,11 +97,6 @@ export default function ProfileView({ user, label, onPress }: Props) {
         <Stat label="Favorites" value={stats?.stats?.fav_count || 0} />
         <Stat label="Followers" value={stats?.stats?.followers || 0} />
         <Stat label="Reviews" value={stats?.stats?.reviews || 0} />
-      </View>
-
-      {/* Buttons */}
-      <View style={styles.actions}>
-        <Action label="📚 Lists" />
       </View>
 
       {/* Tabs */}
@@ -114,13 +115,53 @@ export default function ProfileView({ user, label, onPress }: Props) {
       </View>
 
       {/* Content */}
-      <ScrollView>
-      {tab !== 'reviews' && <MediaList data={list} loading={loading} tab={tab} />}
-      {tab === 'reviews' && <ReviewsList data={list as any} loading={loading} tab="reviews" />}
-      </ScrollView>
-    </View>
+    
+        {tab !== 'reviews' && (
+          <MediaList
+            data={list}
+            loading={loading}
+            tab={tab}
+            onMediaClick={handleMediaClick}
+        />
+        )}
+              
+      {tab === 'reviews' && (
+      <ReviewsList 
+        data={list as any} 
+        loading={loading} 
+        tab="reviews" 
+      />
+      )}
+
+     
+     {/* Buttons */}
+      <View style={styles.actions}>
+        <Action label="Lists" />
+        <Action label="Read List"/>
+        <Action label="Likes"/>
+        <Action label="Media"/>
+        <Action label="Following"/>
+        <Action label="Followers"/>
+        <Action label="Stats"/>
+        <TouchableOpacity onPress={() => {
+          console.log('setttings clicked');
+          setSettingsVisible(true)}}>
+          <Text>Settings</Text>
+        </TouchableOpacity>
+
+      </View>
+      <SettingsModal
+          visible={settingsVisible}
+          onClose={() => setSettingsVisible(false)}
+          user={user}
+          />
+    </ScrollView>
+
   );
+
 }
+
+
 
 const Stat = ({ label, value }: { label: string; value: number }) => (
   <View style={styles.statBox}>
@@ -145,7 +186,7 @@ const styles = StyleSheet.create({
   statValue: { fontWeight: '700', fontSize: 18 },
   statLabel: { fontSize: 12, color: '#777' },
 
-  actions: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 },
+  actions: { flexDirection: 'column', justifyContent: 'center', marginVertical: 10, alignItems: 'center' },
   action: { padding: 10, backgroundColor: '#eee', borderRadius: 8 },
 
   tabs: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#eee' },
