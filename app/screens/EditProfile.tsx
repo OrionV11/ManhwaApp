@@ -34,28 +34,37 @@ const EditProfileScreen = () => {
     }
   }, [user]);
 
-  const pickImage = async () => {
-    // Request permission
-    if (Platform.OS !== 'web') {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to upload images.');
-        return;
-      }
+ const pickImage = async () => {
+  console.log('pickImage called');
+  
+  // Request permission
+  if (Platform.OS !== 'web') {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    console.log('Permission status:', status);
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to upload images.');
+      return;
     }
+  }
 
-    // Launch image picker
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
+  console.log('Launching image picker...');
+  
+  // Launch image picker
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.7,
+  });
 
-    if (!result.canceled && result.assets[0]) {
-      setProfileImage(result.assets[0].uri);
-    }
-  };
+  console.log('Image picker result:', result);
+
+  if (!result.canceled && result.assets[0]) {
+    console.log('Setting image:', result.assets[0].uri);
+    setProfileImage(result.assets[0].uri);
+  }
+};
 
   const takePhoto = async () => {
     // Request permission
@@ -80,17 +89,25 @@ const EditProfileScreen = () => {
   };
 
   const showImageOptions = () => {
-    Alert.alert(
-      'Profile Picture',
-      'Choose an option',
-      [
-        { text: 'Take Photo', onPress: takePhoto },
-        { text: 'Choose from Gallery', onPress: pickImage },
-        { text: 'Remove Photo', onPress: () => setProfileImage(null), style: 'destructive' },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
+  console.log('showImageOptions called');
+  
+  Alert.alert(
+    'Profile Picture',
+    'Choose an option',
+    [
+      { text: 'Take Photo', onPress: () => {
+        console.log('Take Photo pressed');
+        takePhoto();
+      }},
+      { text: 'Choose from Gallery', onPress: () => {
+        console.log('Choose from Gallery pressed');
+        pickImage();
+      }},
+      { text: 'Remove Photo', onPress: () => setProfileImage(null), style: 'destructive' },
+      { text: 'Cancel', style: 'cancel' },
+    ]
+  );
+};
 
   const handleSave = async () => {
     // Validation

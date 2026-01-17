@@ -1,7 +1,8 @@
 import { User } from '@/app/services/Manhwa';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
 interface Props {
@@ -25,75 +26,187 @@ export default function SettingsModal({ visible, onClose, user}: Props) {
     };
     
     
-    //const handleChangePassword()
-    //Close modal
-    //navigate to /change-password
+    const handleChangePassword = () => {
+        onClose();
+        router.push('/change-password')
+    }
     
+    const handleLogout = () => {
+        Alert.alert(
+            'Logout',
+            'Are you sure you want to logout?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Logout',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await AsyncStorage.removeItem('user');
+                        await AsyncStorage.removeItem('userId');
+                        //await AsyncStorage.removeItem('token');
+                    onClose();
+                    router.push('/login');
+                    }
+                }
+            ]
+        );
+    };
     
-    /*const handleLogout()
-     -Show confirmation
-     -Clear asyncstorage (user, userId, token)
-     -Navigate to /login
-    */
-    /*handleDeleteAccount()
-     -Show confirmation alert with warning
-     -Call DELETE /api/user/{userId}
-     -Clear storage
-     -Naviagate to /login
+    const handleDeleteAccount = () => {
+    Alert.alert(
+    'Delete Account',
+    'This action cannot be undone. All your data will be permanently deleted. Are you sure?',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setLoading(true);
+          try {
+            // Call delete API
+            const response = await fetch(`http://localhost:3000/api/users/`/*${userId}*/, {
+              method: 'DELETE',
+            });
 
-    */
+            if (response.ok) {
+              // Clear AsyncStorage
+              await AsyncStorage.removeItem('user');
+              await AsyncStorage.removeItem('userId');
+              await AsyncStorage.removeItem('token');
+              
+              // Close modal and navigate to login
+              onClose();
+              router.push('/login');
+              
+              Alert.alert('Account Deleted', 'Your account has been deleted');
+            } else {
+              Alert.alert('Error', 'Failed to delete account');
+            }
+          } catch (error) {
+            console.error('Error deleting account:', error);
+            Alert.alert('Error', 'Network error occurred');
+          } finally {
+            setLoading(false);
+          }
+        }
+      }
+    ]
+  );
+};
 
-    /*handleToggleNotification()
-    -Toggle state
-    -Save to asyncstorage or backend
 
-    handleTogglePrivacy()
-    -Toggle private/public account
-    -update backend
+    const handleToggleNotification = () => {
+        setNotificationEnabled(!notificationEnabled);
 
-    handleBlockedUsers()
-    -Navigate to blocked users list page
+    };
 
-    handlePrivacyPolicy()
-    -Open privacy policy (webview or external link)
+    
+    const handleTogglePrivacy = () => {
+        setPrivateAccount(!privateAccount)
 
-    hadnleTermsOfService
-    -open terms (webview or external link)
-
-    fetchUserSetting()
-    -load notification preferences
-    -load privacy settings
-    -run on mount
+    }
 
 
-    */
+    const handleBlockedUsers = () => {
+        onClose();
+        router.push('/blocked-users')
+    }
+
+    const handlePrivacyPolicy = () => {
+        Linking.openURL('https://yourwebsite.com/privacy-policy');
+    }
+
+    const handleTermsOfService = () => {
+        Linking.openURL('https://yourwebsite.com/terms-of-service');
+    }
+
+    const fetchUserSetting = async () => {
+        try {
+            const response = await fetch(`http://localhost:3000/api/users/${user.id}/settings`);
         
+            if (response.ok) {
+                const settings = await response.json();
+                setNotificationEnabled(settings.notifications_enabled);
+                setPrivateAccount(settings.is_private);
+            }
+        }   catch (error) {
+            console.error('Error fetching settings;', error);
+        }
+    };
     
-    return (
-        <Modal visible={visible} animationType="slide" transparent={true}>
-            <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                    <Text style={styles.title}>Settings</Text>
+    useEffect(() => {
+        fetchUserSetting();
+    }, []);
 
-                    {/* Settings options here */}
-                    <TouchableOpacity 
-                        style={styles.option}
-                        onPress={handleEditProfile}>
-                        <Text>Edit Profile</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity style={styles.option}>
-                        <Text>Change Password</Text>
-                    </TouchableOpacity>
+    
+   return (
+  <Modal visible={visible} animationType="slide" transparent={true}>
+    <View style={styles.modalContainer}>
+      <View style={styles.modalContent}>
+        <Text style={styles.title}>Settings</Text>
 
-                    <TouchableOpacity style={styles.option}>
-                        <Text>Close</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
-    );
+        {/* Account Settings */}
+        <TouchableOpacity style={styles.option} onPress={handleEditProfile}>
+          <Text style={styles.optionText}>Edit Profile</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.option} onPress={handleChangePassword}>
+          <Text style={styles.optionText}>Change Password</Text>
+        </TouchableOpacity>
+
+        {/* Privacy & Notifications */}
+        <TouchableOpacity style={styles.option} onPress={handleToggleNotification}>
+          <Text style={styles.optionText}>
+            Notifications: {notificationEnabled ? 'On' : 'Off'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.option} onPress={handleTogglePrivacy}>
+          <Text style={styles.optionText}>
+            Private Account: {privateAccount ? 'Yes' : 'No'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.option} onPress={handleBlockedUsers}>
+          <Text style={styles.optionText}>Blocked Users</Text>
+        </TouchableOpacity>
+
+        {/* Legal */}
+        <TouchableOpacity style={styles.option} onPress={handlePrivacyPolicy}>
+          <Text style={styles.optionText}>Privacy Policy</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.option} onPress={handleTermsOfService}>
+          <Text style={styles.optionText}>Terms of Service</Text>
+        </TouchableOpacity>
+
+        {/* Danger Zone */}
+        <TouchableOpacity style={styles.logoutOption} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.logoutOption} onPress={handleDeleteAccount}>
+          <Text style={styles.logoutText}>Delete Account</Text>
+        </TouchableOpacity>
+
+        {/* Close */}
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
+
 }
+
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
