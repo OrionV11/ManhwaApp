@@ -103,52 +103,78 @@ export default function MediaInteractionModal({
     }
   };
 
-  const handleAddToList = async (listType: 'favorites' | 'reading') => {
+  const handleAddToLikes = async () => {
     setLoading(true);
     try {
-      const userJson = await AsyncStorage.getItem('user');
-      if (!userJson) {
-        Alert.alert('Error', 'Please log in first');
-        setLoading(false);
-        return;
-      }
+    const userJson = await AsyncStorage.getItem('user');
+    if (!userJson) {
+      Alert.alert('Error', 'Please log in first');
+      setLoading(false);
+      return;
+    }
 
-      const user = JSON.parse(userJson);
-      setUserId(user.id);
+    const user = JSON.parse(userJson);
+    setUserId(user.id);
 
-      const endpoint =
-        listType === 'favorites'
-          ? `/api/favorites/${user.id}/add/${mediaId}`
-          : `/api/reading-progress/${user.id}/add/${mediaId}`;
+    const response = await fetch(`http://localhost:3000/api/likes?user_id=${user.id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ media_id: mediaId }),
+    });
 
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
+    if (response.ok) {
+      Alert.alert('Success', 'Added to likes!');
+    } else {
+      const data = await response.json();
+      Alert.alert('Error', data.detail || 'Failed to add to likes');
+    }
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'Network error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleAddToReadingList = async () => {
+  setLoading(true);
+  try {
+    const userJson = await AsyncStorage.getItem('user');
+    if (!userJson) {
+      Alert.alert('Error', 'Please log in first');
+      setLoading(false);
+      return;
+    }
+
+    const user = JSON.parse(userJson);
+    setUserId(user.id);
+
+    const response = await fetch(
+      `http://localhost:3000/api/reading-progress/${user.id}/add/${mediaId}`,
+      {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          // Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ media_id: mediaId }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert(
-          'Success',
-          listType === 'favorites'
-            ? 'Added to favorites!'
-            : 'Added to reading list!'
-        );
-      } else {
-        Alert.alert('Error', data.detail || 'Failed to add');
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Network error occurred');
-    } finally {
-      setLoading(false);
+    );
+
+    if (response.ok) {
+      Alert.alert('Success', 'Added to reading list!');
+    } else {
+      const data = await response.json();
+      Alert.alert('Error', data.detail || 'Failed to add to reading list');
     }
-  };
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'Network error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleLikeReview = async (reviewId: number) => {
   if (!userId) {
@@ -330,16 +356,16 @@ export default function MediaInteractionModal({
               <View style={styles.actionsContainer}>
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => handleAddToList('favorites')}
+                  onPress={() => handleAddToLikes()}
                   disabled={loading}
                 >
                   <Text style={styles.actionIcon}>❤️</Text>
-                  <Text style={styles.actionText}>Add to Favorites</Text>
+                  <Text style={styles.actionText}>Add to Likes</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => handleAddToList('reading')}
+                  onPress={() => handleAddToReadingList()}
                   disabled={loading}
                 >
                   <Text style={styles.actionIcon}>📚</Text>

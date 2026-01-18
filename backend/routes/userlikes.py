@@ -28,7 +28,7 @@ def like_media(
 ):
     """Add a media to user's likes"""
     try:
-        return user_likes.add_like(
+        return userlikes.add_like(
             db=db,
             user_id=user_id,
             media_id=like_request.media_id
@@ -44,7 +44,7 @@ def unlike_media(
 ):
     """Remove a media from user's likes"""
     try:
-        return user_likes.remove_like(
+        return userlikes.remove_like(
             db=db,
             user_id=user_id,
             media_id=media_id
@@ -59,7 +59,7 @@ def get_user_likes(
 ):
     """Get all media liked by a specific user"""
     try:
-        return user_likes.get_user_likes(db=db, user_id=user_id)
+        return userlikes.get_user_likes(db=db, user_id=user_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -70,7 +70,7 @@ def check_user_liked_media(
     db: Session = Depends(get_db)
 ):
     """Check if the current user has liked a specific media"""
-    has_liked = user_likes.has_user_liked_media(
+    has_liked = userlikes.has_user_liked_media(
         db=db,
         user_id=user_id,
         media_id=media_id

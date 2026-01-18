@@ -6,7 +6,6 @@ import MediaList from './MediaList';
 import ReviewsList from './ReviewList';
 import SettingsModal from './SettingsModal';
 
-
 const API_BASE_URL = 'http://localhost:3000';
 
 type Props = {
@@ -58,7 +57,7 @@ export default function ProfileView({ user, label }: Props) {
     if (tabName === 'favorites') {
       url = `/api/favorites/${user.id}`;
     } else if (tabName === 'completed') {
-      url = `/api/completed/${user.id}`;
+      url = `/api/reading-progress/completed/${user.id}`;
     } else if (tabName === 'reading') {
       url = `/api/reading-progress/${user.id}`;
     } else if (tabName === 'reviews') {
@@ -136,13 +135,26 @@ export default function ProfileView({ user, label }: Props) {
      
      {/* Buttons */}
       <View style={styles.actions}>
-        <Action label="Lists" />
-        <Action label="Read List"/>
-        <Action label="Likes"/>
-        <Action label="Media"/>
+        <TouchableOpacity
+          onPress={() => {
+            router.push(`/user-lists`)
+          }}>
+          <Text>Lists</Text>  
+          </TouchableOpacity>
+        
+        <TouchableOpacity 
+          onPress={() => router.push('../../screens/ProfileReadList')}>
+            <Text>Read List </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          onPress={() => router.push('../../screens/ProfileLikes')}>
+            <Text>Likes</Text>
+          </TouchableOpacity>
+  
         <Action label="Following"/>
         <Action label="Followers"/>
-        <Action label="Stats"/>
+       
         <TouchableOpacity onPress={() => {
           console.log('setttings clicked');
           setSettingsVisible(true)}}>
@@ -186,7 +198,7 @@ const styles = StyleSheet.create({
   statValue: { fontWeight: '700', fontSize: 18 },
   statLabel: { fontSize: 12, color: '#777' },
 
-  actions: { flexDirection: 'column', justifyContent: 'center', marginVertical: 10, alignItems: 'center' },
+  actions: { margin: 10, flexDirection: 'column', justifyContent: 'space-around', gap: 12, alignItems: 'center' },
   action: { padding: 10, backgroundColor: '#eee', borderRadius: 8 },
 
   tabs: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#eee' },

@@ -2,15 +2,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const mockUser = {
@@ -30,7 +30,7 @@ interface Folder {
   updated_at?: string;
 }
 
-export default function FoldersList() {
+export default function ProfileList() {
   const router = useRouter();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(false);
@@ -152,8 +152,7 @@ export default function FoldersList() {
   };
 
   const handleOpenFolder = (folderId: number) => {
-    // Navigate to folder detail page
-    //router.push(`/folders/${folderId}`);
+    router.push(`/folders/${folderId}`);
   };
 
   if (loading && folders.length === 0) {

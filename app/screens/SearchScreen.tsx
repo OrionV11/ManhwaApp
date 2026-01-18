@@ -1,15 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const API_BASE_URL = 'http://localhost:3000';
@@ -216,8 +217,16 @@ const SearchScreen = () => {
     }
   };
 
+
+  const handleMediaClick = (mediaId: number) => {
+    router.push(`/media/${mediaId}`)
+  }
+
   const renderMediaItem = ({ item }: { item: Media }) => (
-    <TouchableOpacity style={styles.mediaCard}>
+    <TouchableOpacity 
+      style={styles.mediaCard}
+      onPress={() => handleMediaClick(item.id)}
+    >
       {item.cover_image ? (
         <Image source={{ uri: item.cover_image }} style={styles.coverImage} />
       ) : (
