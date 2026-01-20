@@ -69,7 +69,6 @@ export default function ProfileView({ user, label }: Props) {
     }
 
 
-
     try {
       const res = await fetch(`${API_BASE_URL}${url}`);
       if (res.ok) setList(await res.json());
@@ -150,7 +149,12 @@ export default function ProfileView({ user, label }: Props) {
         <TouchableOpacity
           onPress={() => router.push('../../screens/ProfileLikes')}>
             <Text>Likes</Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.push('../../screens/ProfileReviews')}>
+            <Text>Reviews</Text>
+        </TouchableOpacity>
   
         <Action label="Following"/>
         <Action label="Followers"/>
@@ -172,7 +176,6 @@ export default function ProfileView({ user, label }: Props) {
   );
 
 }
-
 
 
 const Stat = ({ label, value }: { label: string; value: number }) => (

@@ -4,8 +4,10 @@ export default function ProfileStats() {
   return (
     <View style={styles.container}>
       <Stat label="Reading" value={0} />
-      <Stat label="Liked" value={0} />
+      <Stat label="Completed" value={0} />
+      <Stat label="Favorites" value={0} />
       <Stat label="Followers" value={0} />
+      <Stat label="Reviews" value={0} />
     </View>
   );
 }

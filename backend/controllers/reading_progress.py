@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models import User, Media, UserMediaList
 from fastapi import HTTPException
+from datetime import datetime
 
 
 def add_user_reading_media(db: Session, user_id: int, media_id: int):
@@ -64,7 +65,10 @@ def mark_as_completed(db: Session, user_id: int, media_id: int):
 
 def get_completed(db: Session, user_id: int):
     """Get all completed media for user"""
-    return (
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    entries = (
         db.query(UserMediaList)
         .filter(
             UserMediaList.user_id == user_id,
@@ -73,6 +77,17 @@ def get_completed(db: Session, user_id: int):
         .all()
     )
 
+    media_ids = [entry.media_id for entry in entries]   
+    if not media_ids:
+        return []
+    media = (
+        db.query(Media)
+        .filter(Media.id.in_(media_ids))
+        .all()
+    )
+
+    return media
+
 def get_user_reading_media(db: Session, user_id: int):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -80,7 +95,8 @@ def get_user_reading_media(db: Session, user_id: int):
 
     entries = (
         db.query(UserMediaList)
-        .filter(UserMediaList.user_id == user_id)
+        .filter(UserMediaList.user_id == user_id,
+                UserMediaList.completed_at.is_(None))  
         .all()
     )
 

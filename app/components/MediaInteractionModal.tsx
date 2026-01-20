@@ -43,6 +43,7 @@ export default function MediaInteractionModal({
   const [loading, setLoading] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [likedReview, setLikedReview] = useState(0);
+  const [folders, setFolders] = useState<any[]>([]);
 
   /* user already exists in DB */
   const [userId, setUserId] = useState<number | null>(1);
@@ -138,6 +139,43 @@ export default function MediaInteractionModal({
   }
 };
 
+const handleAddToCompletedList = async () => {
+  setLoading(true);
+  try {
+    const userJson = await AsyncStorage.getItem('user');
+    if (!userJson) {
+      Alert.alert('Error', 'Please log in first');
+      setLoading(false);
+      return;
+    }   
+
+    const user = JSON.parse(userJson);
+    setUserId(user.id);
+
+    const response = await fetch(
+      `http://localhost:3000/api/reading-progress/${user.id}/complete/${mediaId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (response.ok) {
+      Alert.alert('Success', 'Added to completed list!');
+    } else {
+      const data = await response.json();
+      Alert.alert('Error', data.detail || 'Failed to add to completed list');
+    }
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'Network error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
+
 const handleAddToReadingList = async () => {
   setLoading(true);
   try {
@@ -158,7 +196,6 @@ const handleAddToReadingList = async () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ media_id: mediaId }),
       }
     );
 
@@ -185,8 +222,6 @@ const handleAddToReadingList = async () => {
   setLoading(true);
   try {
 
-  
-
     const response = await fetch(
       `http://localhost:3000/api/reviews/${reviewId}/like?user_id=${userId}`,
       {
@@ -209,6 +244,61 @@ const handleAddToReadingList = async () => {
 
     } else {
       Alert.alert('Error', reviewsData.detail || 'Failed to like review');
+    }
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'Network error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const fetchFolders = async () => {
+  setLoading(true);
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const response = await fetch(`http://localhost:3000/api/folders?user_id=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        //Authorization: `Bearer ${token}`,
+      },
+    
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch folders');
+    }
+    const data = await response.json();
+    setFolders(data);
+  } catch (error) {
+    console.log('Error fetching folders', error);
+    Alert.alert('Error', 'Failed to fetch folders');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+const handleAddToFolders = async (folderId: number) => {
+  setLoading(true);
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const response = await fetch(`http://localhost:3000/api/folders/${folderId}/items?user_id=${userId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        //Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ media_id: mediaId }),
+    });
+
+    if (response.ok) {
+      Alert.alert('Success', 'Media added to folder!');
+      await fetchFolders();
+    } else {
+      const data = await response.json();
+      Alert.alert('Error', data.detail || 'Failed to add media to folder');
     }
   } catch (error) {
     console.error(error);
@@ -316,6 +406,12 @@ const handleAddToReadingList = async () => {
   }
 }, [visible, activeTab]);
 
+useEffect(() => {
+  if (visible && activeTab === 'actions') {
+    fetchFolders();
+  }
+}, [visible, activeTab]);
+
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
       <View style={styles.modalContainer}>
@@ -363,18 +459,44 @@ const handleAddToReadingList = async () => {
                   <Text style={styles.actionText}>Add to Likes</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => handleAddToReadingList()}
-                  disabled={loading}
-                >
-                  <Text style={styles.actionIcon}>📚</Text>
-                  <Text style={styles.actionText}>Add to Reading List</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => handleAddToReadingList()}
+                      disabled={loading}
+                    >
+                      <Text style={styles.actionIcon}>📚</Text>
+                      <Text style={styles.actionText}>Add to Reading List</Text>
+                    </TouchableOpacity>
 
-                {loading && <ActivityIndicator size="small" color="#3b82f6" />}
-              </View>
-            )} 
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => handleAddToCompletedList()}
+                      disabled={loading}
+                    >
+                      <Text style={styles.actionIcon}>✅</Text>
+                      <Text style={styles.actionText}>Add to Completed List</Text>
+                    </TouchableOpacity>
+    
+                    {/* Folder Button */}
+                    {folders.length > 0 ? (
+                      folders.map((folder) => (
+                        <TouchableOpacity 
+                          key={folder.id}
+                          style={styles.actionButton}
+                          onPress={() => handleAddToFolders(folder.id)}
+                          disabled={loading}
+                        >
+                          <Text style={styles.actionIcon}>📁</Text>
+                          <Text style={styles.actionText}>{folder.title}</Text>
+                        </TouchableOpacity>
+                      ))
+                    ) : (
+                      <Text style={styles.actionText}>No folders available</Text>
+                    )}
+    
+                    {loading && <ActivityIndicator size="small" color="#3b82f6" />}
+                  </View>
+                )}
             
             {activeTab === 'review' && (
               <View style={styles.reviewContainer}>
