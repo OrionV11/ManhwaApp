@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from dependencies import get_current_user_id
 from database import get_db
 from schemas.folders import (
     FolderCreate, FolderUpdate, FolderResponse, 
@@ -13,7 +14,7 @@ router = APIRouter(prefix="/folders", tags=["folders"])
 @router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
 def create_folder(
     folder: FolderCreate,
-    user_id: int = 1,  # TODO: Get from auth token
+    user_id: int = Depends(get_current_user_id),  
     db: Session = Depends(get_db)
 ):
     """Create a new folder"""
@@ -31,7 +32,7 @@ def create_folder(
 
 @router.get("", response_model=List[dict])
 def get_user_folders(
-    user_id: int = 1,  # TODO: Get from auth token
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Get all folders for a user"""
@@ -41,7 +42,7 @@ def get_user_folders(
 @router.get("/{folder_id}", response_model=dict)
 def get_folder(
     folder_id: int,
-    user_id: int = 1,  # TODO: Get from auth token
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Get a specific folder with all its items"""
@@ -59,7 +60,7 @@ def get_folder(
 def update_folder(
     folder_id: int,
     folder_update: FolderUpdate,
-    user_id: int = 1,  # TODO: Get from auth token
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Update a folder"""
@@ -79,7 +80,7 @@ def update_folder(
 @router.delete("/{folder_id}", status_code=status.HTTP_200_OK)
 def delete_folder(
     folder_id: int,
-    user_id: int = 1,  # TODO: Get from auth token
+    user_id: int = Depends(get_current_user_id),  
     db: Session = Depends(get_db)
 ):
     """Delete a folder"""
@@ -97,7 +98,7 @@ def delete_folder(
 def add_media_to_folder(
     folder_id: int,
     item: FolderItemCreate,
-    user_id: int = 1,  # TODO: Get from auth token
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Add media to a folder"""
@@ -117,7 +118,7 @@ def add_media_to_folder(
 def remove_media_from_folder(
     folder_id: int,
     media_id: int,
-    user_id: int = 1,  # TODO: Get from auth token
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Remove media from a folder"""
@@ -137,7 +138,7 @@ def update_item_notes(
     folder_id: int,
     media_id: int,
     notes_update: FolderItemUpdate,
-    user_id: int = 1,  # TODO: Get from auth token
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Update notes for a media item in a folder"""

@@ -15,6 +15,7 @@ from routes.followers import router as followers_router
 from routes.user_media_likes import router as user_media_likes_router
 from routes.user_activity import router as user_activity_router
 from routes.folders import router as folder_router
+from dependencies import get_current_user_id
 app = FastAPI(title="Manhwa App API")
 
 # Create tables

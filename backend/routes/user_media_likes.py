@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from database import get_db
 from controllers import user_media_list
+from dependencies import get_current_user_id
 
 router = APIRouter(
     prefix="/list",
@@ -34,7 +35,7 @@ class MediaListUpdate(BaseModel):
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def add_to_list(
     entry: MediaListCreate,
-    user_id: int,  # TODO: Replace with authenticated user
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Add a media to user's list"""
@@ -55,7 +56,7 @@ def add_to_list(
 def update_list_entry(
     entry_id: int,
     entry: MediaListUpdate,
-    user_id: int,  # TODO: Replace with authenticated user
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Update a media entry in user's list"""
@@ -75,7 +76,7 @@ def update_list_entry(
 @router.delete("/{entry_id}")
 def remove_from_list(
     entry_id: int,
-    user_id: int,  # TODO: Replace with authenticated user
+    user_id: int = Depends(get_current_user_id),  
     db: Session = Depends(get_db)
 ):
     """Remove a media from user's list"""
@@ -88,9 +89,9 @@ def remove_from_list(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/user/{user_id}")
+@router.get("/user")
 def get_user_list(
-    user_id: int,
+    user_id: int = Depends(get_current_user_id),
     status: Optional[str] = Query(None, pattern="^(WATCHING|COMPLETED|ON_HOLD|DROPPED|PLAN_TO_WATCH)$"),
     db: Session = Depends(get_db)
 ):
@@ -104,10 +105,10 @@ def get_user_list(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
-@router.get("/user/{user_id}/media/{media_id}")
+@router.get("/user/media/{media_id}")
 def get_list_entry(
-    user_id: int,
     media_id: int,
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Get a specific media entry from user's list"""
@@ -125,9 +126,9 @@ def get_list_entry(
     
     return entry
 
-@router.get("/user/{user_id}/stats")
+@router.get("/user/stats")
 def get_list_stats(
-    user_id: int,
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Get statistics about user's media list"""

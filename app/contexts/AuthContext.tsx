@@ -1,13 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 
-const API_BASE_URL = 'http://localhost:3000'; // Change to your server IP for mobile
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-}
+const API_BASE_URL = 'http://localhost:3000';
 
 interface User {
   id: number;
@@ -44,9 +39,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkAuth = async () => {
     try {
-      const userJson = await AsyncStorage.getItem('user');
-      if (userJson) {
-        setUser(JSON.parse(userJson));
+      const [storedUser, storedToken] = await Promise.all([
+        AsyncStorage.getItem('user'),
+        AsyncStorage.getItem('authToken'),
+      ]);
+
+      if (storedUser && storedToken) {
+        setUser(JSON.parse(storedUser));
+        setToken(storedToken);
       }
     } catch (error) {
       console.error('Error checking auth:', error);
@@ -68,17 +68,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Login failed');
+        throw new Error(data.detail || data.message || 'Login failed');
       }
 
-      // Store user data
-      await AsyncStorage.setItem('user', JSON.stringify(data.user));
-      await AsyncStorage.setItem('authToken', data.access_token);
+      // Store user data and token
+      await Promise.all([
+        AsyncStorage.setItem('user', JSON.stringify(data.user)),
+        AsyncStorage.setItem('authToken', data.access_token),
+      ]);
 
       setUser(data.user);
       setToken(data.access_token);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
+      Alert.alert('Login Failed', error.message || 'Please try again');
       throw error;
     }
   };
@@ -96,34 +99,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Signup failed');
+        throw new Error(data.detail || data.message || 'Signup failed');
       }
 
       // Auto-login after signup
       await login(email, password);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error);
+      Alert.alert('Signup Failed', error.message || 'Please try again');
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('user');
-      setUser(null);
+      // Optional: Call backend logout endpoint if you have one
+      if (token) {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }).catch(err => console.log('Logout API call failed:', err));
+      }
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Logout API error:', error);
+    } finally {
+      // Clear local storage regardless of API result
+      await Promise.all([
+        AsyncStorage.removeItem('user'),
+        AsyncStorage.removeItem('authToken'),
+      ]);
+      setUser(null);
+      setToken(null);
     }
   };
 
-  const updateProfile = async (data: { username?: string; bio?: string; profile_picture?: string | null }) => {
+  const updateProfile = async (data: { 
+    username?: string; 
+    bio?: string; 
+    profile_picture?: string | null 
+  }) => {
     if (!user) throw new Error('No user logged in');
+    if (!token) throw new Error('No authentication token');
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/profile/${user.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       });
@@ -131,15 +157,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.detail || 'Update failed');
+        throw new Error(result.detail || result.message || 'Update failed');
       }
 
       // Update local user data
-      const updatedUser = { ...user, ...data };
+      const updatedUser = { ...user, ...data, updated_at: new Date().toISOString() };
       await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
       setUser(updatedUser);
-    } catch (error) {
+      
+      Alert.alert('Success', 'Profile updated successfully');
+    } catch (error: any) {
       console.error('Update profile error:', error);
+      Alert.alert('Update Failed', error.message || 'Please try again');
       throw error;
     }
   };
@@ -154,7 +183,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         signup,
         logout,
         updateProfile,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!token,
       }}
     >
       {children}

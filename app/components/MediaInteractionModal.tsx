@@ -1,570 +1,318 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { api, ApiError } from '../utils/api';
 
-/* 🔧 MOCK SETUP: existing DB user */
-const mockUser = {
-  id: 1,
-  username: 'TestUser',
-  email: 'test@example.com',
-  profile_picture: null,
-  bio: 'Test bio',
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+type Folder = {
+  id: number;
+  name: string;
+  description?: string;
+  created_at: string;
 };
 
-interface MediaInteractionModalProps {
+type Props = {
   visible: boolean;
   onClose: () => void;
   mediaId: number;
-  mediaTitle: string;
-}
+  onReviewSubmitted?: () => void;
+};
 
-export default function MediaInteractionModal({ 
-  visible, 
-  onClose, 
-  mediaId, 
-  mediaTitle 
-}: MediaInteractionModalProps) {
-
-  const [activeTab, setActiveTab] = useState<'actions' | 'review'| 'reviews'>('actions');
+export default function MediaActionsModal({ visible, onClose, mediaId, onReviewSubmitted }: Props) {
+  const { user } = useAuth();
+  
+  // Review state
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [likedReview, setLikedReview] = useState(0);
-  const [folders, setFolders] = useState<any[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
-  /* user already exists in DB */
-  const [userId, setUserId] = useState<number | null>(1);
+  // Folder state
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [foldersLoading, setFoldersLoading] = useState(false);
+  const [addingToFolder, setAddingToFolder] = useState<number | null>(null);
 
-  /* MOCK SETUP: seed AsyncStorage once */
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'review' | 'folders'>('review');
+
   useEffect(() => {
-    const seedMockUser = async () => {
-      const existingUser = await AsyncStorage.getItem('user');
-      if (!existingUser) {
-        await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-        await AsyncStorage.setItem('userId', String(mockUser.id));
-      }
-    };
-    seedMockUser();
-  }, []);
+    if (visible && user && activeTab === 'folders') {
+      fetchFolders();
+    }
+  }, [visible, user, activeTab]);
 
-  // Load userId from AsyncStorage when modal opens
-  /*
-  useEffect(() => {
-    const fetchUserId = async () => {
-      const storedUserId = await AsyncStorage.getItem('userId');
-      const storeUser = await AsyncStorage.getItem('user');
-      console.log('Fetched userId from AsyncStorage:', storedUserId);
-      console.log('Fetched user from AsyncStorage:', storeUser);
+  const fetchFolders = async () => {
+    if (!user) return;
 
-      if (storedUserId) {
-        console.log('Found userId:', storedUserId);
-        setUserId(Number(storedUserId));
-      } else if (storeUser) {
-        const user = JSON.parse(storeUser);
-        console.log('Parsed user object:', user);
-        setUserId(user.id);
-      } else {
-        console.log('No userId or user found in AsyncStorage');
-        setUserId(null);
-      }
-    };
-    if (visible) fetchUserId();
-  }, [visible]);
-  */
-
-  const getMediaReviews = async () => {
-    setLoading(true);
+    setFoldersLoading(true);
     try {
-      const response = await fetch(`http://localhost:3000/api/reviews/media/${mediaId}`)
-
-      if(!response.ok) {
-        throw new Error('Failed to fetch reviews');
-      }
-
-      const reviewsData = await response.json();
-      setReviews(reviewsData)
+      const data = await api.get<Folder[]>(`/api/folders/user/${user.id}`);
+      setFolders(data);
     } catch (error) {
-      console.error('Error fetching reviews:', error);
-      Alert.alert('Error', 'Failed to load reviews');
+      console.error('Fetch folders error:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error');
+      } else {
+        Alert.alert('Error', 'Failed to load folders');
+      }
     } finally {
-      setLoading(false);
+      setFoldersLoading(false);
     }
   };
 
-  const handleAddToLikes = async () => {
-    setLoading(true);
+  const handleAddToFolder = async (folderId: number) => {
+    setAddingToFolder(folderId);
     try {
-    const userJson = await AsyncStorage.getItem('user');
-    if (!userJson) {
-      Alert.alert('Error', 'Please log in first');
-      setLoading(false);
-      return;
-    }
+      await api.post(`/api/folders/${folderId}/items`, {
+        media_id: mediaId
+      });
 
-    const user = JSON.parse(userJson);
-    setUserId(user.id);
-
-    const response = await fetch(`http://localhost:3000/api/likes?user_id=${user.id}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ media_id: mediaId }),
-    });
-
-    if (response.ok) {
-      Alert.alert('Success', 'Added to likes!');
-    } else {
-      const data = await response.json();
-      Alert.alert('Error', data.detail || 'Failed to add to likes');
-    }
-  } catch (error) {
-    console.error(error);
-    Alert.alert('Error', 'Network error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleAddToCompletedList = async () => {
-  setLoading(true);
-  try {
-    const userJson = await AsyncStorage.getItem('user');
-    if (!userJson) {
-      Alert.alert('Error', 'Please log in first');
-      setLoading(false);
-      return;
-    }   
-
-    const user = JSON.parse(userJson);
-    setUserId(user.id);
-
-    const response = await fetch(
-      `http://localhost:3000/api/reading-progress/${user.id}/complete/${mediaId}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (response.ok) {
-      Alert.alert('Success', 'Added to completed list!');
-    } else {
-      const data = await response.json();
-      Alert.alert('Error', data.detail || 'Failed to add to completed list');
-    }
-  } catch (error) {
-    console.error(error);
-    Alert.alert('Error', 'Network error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleAddToReadingList = async () => {
-  setLoading(true);
-  try {
-    const userJson = await AsyncStorage.getItem('user');
-    if (!userJson) {
-      Alert.alert('Error', 'Please log in first');
-      setLoading(false);
-      return;
-    }
-
-    const user = JSON.parse(userJson);
-    setUserId(user.id);
-
-    const response = await fetch(
-      `http://localhost:3000/api/reading-progress/${user.id}/add/${mediaId}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (response.ok) {
-      Alert.alert('Success', 'Added to reading list!');
-    } else {
-      const data = await response.json();
-      Alert.alert('Error', data.detail || 'Failed to add to reading list');
-    }
-  } catch (error) {
-    console.error(error);
-    Alert.alert('Error', 'Network error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
-  const handleLikeReview = async (reviewId: number) => {
-  if (!userId) {
-    Alert.alert('Error', 'Please log in first');
-    return;
-  }
-
-  setLoading(true);
-  try {
-
-    const response = await fetch(
-      `http://localhost:3000/api/reviews/${reviewId}/like?user_id=${userId}`,
-      {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-      }
-    );
-
-    const reviewsData = await response.json();
-
-    console.log('Fetched reviews JSON:', reviewsData);
-
-    setReviews(Array.isArray(reviewsData.reviews) ? reviewsData.reviews : []);
-
-    if (response.ok) {
-      Alert.alert('Success', 'Review liked!');
-
-
-      await getMediaReviews();
-
-    } else {
-      Alert.alert('Error', reviewsData.detail || 'Failed to like review');
-    }
-  } catch (error) {
-    console.error(error);
-    Alert.alert('Error', 'Network error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
-const fetchFolders = async () => {
-  setLoading(true);
-  try {
-    const token = await AsyncStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/folders?user_id=${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        //Authorization: `Bearer ${token}`,
-      },
-    
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch folders');
-    }
-    const data = await response.json();
-    setFolders(data);
-  } catch (error) {
-    console.log('Error fetching folders', error);
-    Alert.alert('Error', 'Failed to fetch folders');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-const handleAddToFolders = async (folderId: number) => {
-  setLoading(true);
-  try {
-    const token = await AsyncStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/folders/${folderId}/items?user_id=${userId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        //Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ media_id: mediaId }),
-    });
-
-    if (response.ok) {
       Alert.alert('Success', 'Media added to folder!');
       await fetchFolders();
-    } else {
-      const data = await response.json();
-      Alert.alert('Error', data.detail || 'Failed to add media to folder');
+    } catch (error) {
+      console.error('Add to folder error:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error');
+      } else {
+        Alert.alert('Error', 'Failed to add media to folder');
+      }
+    } finally {
+      setAddingToFolder(null);
     }
-  } catch (error) {
-    console.error(error);
-    Alert.alert('Error', 'Network error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+  };
 
   const handleSubmitReview = async () => {
     console.log('=== SUBMIT REVIEW STARTED ===');
 
-    if (!userId) {
+    // Validate user is logged in
+    if (!user?.id) {
       Alert.alert('Error', 'Please log in first');
       return;
     }
 
+    // Validate rating
     if (rating === 0) {
       Alert.alert('Error', 'Please select a rating');
       return;
     }
 
+    // Validate review text
     if (!reviewText.trim()) {
       Alert.alert('Error', 'Please write a review');
       return;
     }
 
-    setLoading(true);
+    setReviewLoading(true);
     try {
-      const cleanRating = Number(rating);
-
-    // Prepare request body exactly how FastAPI expects
+      // Prepare request body
       const requestBody = {
-        user_id: Number(userId),
+        
         media_id: Number(mediaId),
         content: reviewText.trim(),
-        rating: cleanRating,
-        title: "", // optional
-    };
+        rating: Number(rating),
+        title: "",
+      };
 
-    console.log('POST body:', requestBody);
-      /*
-      const token = await getAuthToken();
-      if (!token) {
-        Alert.alert('Error', 'Please log in first');
-        setLoading(false);
-        return;
-      }
-      */
+      console.log('POST body:', requestBody);
 
-      const response = await fetch(
-        `http://localhost:3000/api/reviews`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // 'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
+      // Make API request
+      const data = await api.post('/api/reviews', requestBody);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Success', 'Review submitted!');
-        setRating(0);
-        setReviewText('');
-        onClose();
-      } else {
-        Alert.alert('Error', data.detail || JSON.stringify(data));
-      }
+      console.log('Review submitted successfully:', data);
+      Alert.alert('Success', 'Review submitted!');
+      
+      // Reset form
+      setRating(0);
+      setReviewText('');
+      onClose();
+      
+      // Refresh reviews list
+      onReviewSubmitted?.();
     } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Network error occurred');
+      console.error('Submit review error:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', 'Failed to submit review');
+      }
     } finally {
-      setLoading(false);
+      setReviewLoading(false);
     }
   };
 
-  const renderStars = () => (
-    <View style={styles.starsContainer}>
-      {[...Array(10)].map((_, i) => {
-        const star = i + 1;
-        return (
-          <TouchableOpacity
-            key={star}
-            onPress={() => setRating(star)}
-            style={styles.starButton}
-          >
-            <Text style={[styles.star, rating >= star && styles.starFilled]}>
-              ★
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
+  const handleClose = () => {
+    // Reset review form when closing
+    setRating(0);
+    setReviewText('');
+    setActiveTab('review');
+    onClose();
+  };
 
-  useEffect(() => {
-  if (visible && activeTab === 'reviews') {
-    getMediaReviews();
+  if (!user) {
+    return (
+      <Modal visible={visible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.title}>Please log in first</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
   }
-}, [visible, activeTab]);
-
-useEffect(() => {
-  if (visible && activeTab === 'actions') {
-    fetchFolders();
-  }
-}, [visible, activeTab]);
 
   return (
-    <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>{mediaTitle}</Text>
+          {/* Close button */}
+          <TouchableOpacity style={styles.closeIcon} onPress={handleClose}>
+            <Ionicons name="close" size={28} color="#666" />
+          </TouchableOpacity>
 
-          <View style={styles.tabsContainer}>
+          {/* Tab Selector */}
+          <View style={styles.tabContainer}>
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'actions' && styles.tabActive]}
-              onPress={() => setActiveTab('actions')}
-            >
-              <Text style={[styles.tabText, activeTab === 'actions' && styles.tabTextActive]}>
-                Actions
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'review' && styles.tabActive]}
+              style={[styles.tab, activeTab === 'review' && styles.activeTab]}
               onPress={() => setActiveTab('review')}
             >
-              <Text style={[styles.tabText, activeTab === 'review' && styles.tabTextActive]}>
-                Review
+              <Text style={[styles.tabText, activeTab === 'review' && styles.activeTabText]}>
+                Write Review
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'reviews' && styles.tabActive]}
-              onPress={() => setActiveTab('reviews')}
+              style={[styles.tab, activeTab === 'folders' && styles.activeTab]}
+              onPress={() => setActiveTab('folders')}
             >
-              <Text style={[styles.tabText, activeTab === 'reviews' && styles.tabTextActive]}>
-                Reviews ({reviews.length})
+              <Text style={[styles.tabText, activeTab === 'folders' && styles.activeTabText]}>
+                Add to Folder
               </Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.contentContainer}>
-            {activeTab === 'actions' && (
-              <View style={styles.actionsContainer}>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => handleAddToLikes()}
-                  disabled={loading}
-                >
-                  <Text style={styles.actionIcon}>❤️</Text>
-                  <Text style={styles.actionText}>Add to Likes</Text>
-                </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => handleAddToReadingList()}
-                      disabled={loading}
-                    >
-                      <Text style={styles.actionIcon}>📚</Text>
-                      <Text style={styles.actionText}>Add to Reading List</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => handleAddToCompletedList()}
-                      disabled={loading}
-                    >
-                      <Text style={styles.actionIcon}>✅</Text>
-                      <Text style={styles.actionText}>Add to Completed List</Text>
-                    </TouchableOpacity>
-    
-                    {/* Folder Button */}
-                    {folders.length > 0 ? (
-                      folders.map((folder) => (
-                        <TouchableOpacity 
-                          key={folder.id}
-                          style={styles.actionButton}
-                          onPress={() => handleAddToFolders(folder.id)}
-                          disabled={loading}
-                        >
-                          <Text style={styles.actionIcon}>📁</Text>
-                          <Text style={styles.actionText}>{folder.title}</Text>
-                        </TouchableOpacity>
-                      ))
-                    ) : (
-                      <Text style={styles.actionText}>No folders available</Text>
-                    )}
-    
-                    {loading && <ActivityIndicator size="small" color="#3b82f6" />}
-                  </View>
-                )}
-            
-            {activeTab === 'review' && (
+          {/* Content */}
+          <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
+            {activeTab === 'review' ? (
               <View style={styles.reviewContainer}>
-                <Text style={styles.label}>Rating (out of 10)</Text>
-                {renderStars()}
-                <Text style={styles.ratingText}>
-                  {rating > 0 ? `${rating}/10` : 'Select a rating'}
-                </Text>
+                {/* Rating Selector */}
+                <View style={styles.section}>
+                  <Text style={styles.label}>Rating *</Text>
+                  <View style={styles.ratingButtons}>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <TouchableOpacity
+                        key={num}
+                        style={[
+                          styles.ratingButton,
+                          rating === num && styles.ratingButtonActive,
+                        ]}
+                        onPress={() => setRating(num)}
+                      >
+                        <Text
+                          style={[
+                            styles.ratingText,
+                            rating === num && styles.ratingTextActive,
+                          ]}
+                        >
+                          {num}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
 
-                <Text style={styles.label}>Review</Text>
-                <TextInput
-                  style={styles.textInput}
-                  multiline
-                  value={reviewText}
-                  onChangeText={setReviewText}
-                />
+                {/* Review Text Input */}
+                <View style={styles.section}>
+                  <Text style={styles.label}>Your Review *</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    multiline
+                    numberOfLines={8}
+                    placeholder="Share your thoughts about this manga/manhwa..."
+                    value={reviewText}
+                    onChangeText={setReviewText}
+                    textAlignVertical="top"
+                  />
+                  <Text style={styles.charCount}>
+                    {reviewText.length} characters
+                  </Text>
+                </View>
 
+                {/* Submit Button */}
                 <TouchableOpacity
-                  style={styles.submitButton}
+                  style={[styles.submitButton, reviewLoading && styles.submitButtonDisabled]}
                   onPress={handleSubmitReview}
-                  disabled={loading}
+                  disabled={reviewLoading}
                 >
-                  {loading ? (
+                  {reviewLoading ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.submitButtonText}>Submit Review</Text>
+                    <>
+                      <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                      <Text style={styles.submitButtonText}>Submit Review</Text>
+                    </>
                   )}
                 </TouchableOpacity>
               </View>
-            )} 
-            
-            {activeTab === 'reviews' && (
-              <View style={styles.reviewsListContainer}>
-                {loading ? (
-                  <ActivityIndicator size="small" color="#3b82f6" />
-                ) : reviews.length === 0 ? (
-                  <Text style={styles.noReviewsText}>No reviews yet</Text>
+            ) : (
+              <View style={styles.foldersContainer}>
+                {foldersLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4c00b4" />
+                  </View>
+                ) : folders.length === 0 ? (
+                  <View style={styles.emptyContainer}>
+                    <Ionicons name="folder-outline" size={64} color="#ccc" />
+                    <Text style={styles.emptyText}>No folders yet</Text>
+                    <Text style={styles.emptySubtext}>
+                      Create a folder to organize your media
+                    </Text>
+                  </View>
                 ) : (
-                  reviews.map((review) => (
-                    <View key={review.review_id} style={styles.reviewItem}>
-                      <View style={styles.reviewHeader}>
-                        <Text style={styles.reviewUserName}>{review.username}</Text>
-                        <Text style={styles.reviewRating}>⭐ {review.rating}/10</Text>
-                        <Text style={styles.reviewContent}>{review.content}</Text>
-                        <TouchableOpacity onPress={() => {
-                          console.log('Full review object:', review);
-                          console.log('Review ID:', review.review_id);
-                          handleLikeReview(review.review_id);
-                        }}>
-                          <Text> ❤️ Like </Text>
-                        </TouchableOpacity>
-                      </View>
-                      {review.review_text && (
-                        <Text style={styles.reviewText}>{review.review_text}</Text>
-                      )}
-                      <Text style={styles.reviewDate}>
-                        {new Date(review.created_at).toLocaleDateString()}
-                      </Text>
-                    </View>
-                  ))
+                  <FlatList
+                    data={folders}
+                    keyExtractor={(item) => String(item.id)}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.folderItem}
+                        onPress={() => handleAddToFolder(item.id)}
+                        disabled={addingToFolder === item.id}
+                      >
+                        <View style={styles.folderIcon}>
+                          <Ionicons name="folder" size={24} color="#4c00b4" />
+                        </View>
+                        <View style={styles.folderInfo}>
+                          <Text style={styles.folderName}>{item.name}</Text>
+                          {item.description && (
+                            <Text style={styles.folderDescription} numberOfLines={1}>
+                              {item.description}
+                            </Text>
+                          )}
+                        </View>
+                        {addingToFolder === item.id ? (
+                          <ActivityIndicator size="small" color="#4c00b4" />
+                        ) : (
+                          <Ionicons name="add-circle-outline" size={24} color="#4c00b4" />
+                        )}
+                      </TouchableOpacity>
+                    )}
+                    scrollEnabled={false}
+                  />
                 )}
               </View>
             )}
           </ScrollView>
-
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -572,76 +320,188 @@ useEffect(() => {
 }
 
 const styles = StyleSheet.create({
-  contentContainer: { maxHeight: 400 },
-  modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-  tabsContainer: { flexDirection: 'row', marginBottom: 16 },
-  tab: { flex: 1, padding: 12, alignItems: 'center' },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#3b82f6' },
-  tabText: { color: '#666' },
-  tabTextActive: { color: '#3b82f6', fontWeight: 'bold' },
-  actionsContainer: { gap: 12 },
-  actionButton: { flexDirection: 'row', padding: 16, backgroundColor: '#f3f4f6', borderRadius: 12 },
-  actionIcon: { fontSize: 24 },
-  actionText: { fontSize: 16, marginLeft: 12 },
-  reviewContainer: { gap: 16 },
-  label: { fontWeight: '600' },
-  starsContainer: { flexDirection: 'row', flexWrap: 'wrap' },
-  starButton: { padding: 4 },
-  star: { fontSize: 32, color: '#d1d5db' },
-  starFilled: { color: '#fbbf24' },
-  ratingText: { textAlign: 'center' },
-  textInput: { borderWidth: 1, borderRadius: 8, padding: 12, minHeight: 120 },
-  submitButton: { backgroundColor: '#3b82f6', padding: 16, borderRadius: 8, alignItems: 'center' },
-  submitButtonText: { color: '#fff', fontWeight: 'bold' },
-  closeButton: { padding: 12, alignItems: 'center' },
-  closeButtonText: { color: '#3b82f6', fontWeight: 'bold' },
-  reviewsListContainer: {
-    gap: 16,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
-  reviewItem: {
-    backgroundColor: '#f9fafb',
-    padding: 12,
-    borderRadius: 8,
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  closeIcon: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 10,
+    padding: 4,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: '#4c00b4',
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+  },
+  activeTabText: {
+    color: '#4c00b4',
+    fontWeight: '700',
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  reviewContainer: {
+    paddingBottom: 20,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#333',
+  },
+  ratingButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  ratingButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+  },
+  ratingButtonActive: {
+    backgroundColor: '#4c00b4',
+    borderColor: '#4c00b4',
+  },
+  ratingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  ratingTextActive: {
+    color: '#fff',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 15,
+    minHeight: 150,
+    backgroundColor: '#fafafa',
+  },
+  charCount: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'right',
+  },
+  submitButton: {
+    backgroundColor: '#4c00b4',
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
   },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  foldersContainer: {
+    flex: 1,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
     alignItems: 'center',
   },
-  reviewUserName: {
+  emptyContainer: {
+    paddingVertical: 60,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  folderItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#fafafa',
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  folderIcon: {
+    marginRight: 12,
+  },
+  folderInfo: {
+    flex: 1,
+  },
+  folderName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#222',
+    marginBottom: 4,
   },
-  reviewRating: {
+  folderDescription: {
     fontSize: 14,
-    color: '#fbbf24',
-    fontWeight: '600',
+    color: '#666',
   },
-  reviewText: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 20,
+  closeButton: {
+    backgroundColor: '#4c00b4',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
   },
-  reviewDate: {
-    fontSize: 10,
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  title: {
+    fontSize: 12,
     color: '#999',
-  },
-  noReviewsText: {
-    textAlign: 'center',
-    color: '#999',
-    fontSize: 14,
-    paddingVertical: 20,
-  },
-  reviewContent: {
-    width: '100%',
-    textAlign: 'center',
-    color: '#999',
-    fontSize: 15,
-    paddingVertical: 20,
+    marginTop: 8,
+    textAlign: 'right',
 
   }
 });

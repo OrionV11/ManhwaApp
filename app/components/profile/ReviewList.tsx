@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -8,78 +7,39 @@ import {
   Image,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import { api, ApiError } from '../../utils/api';
 
-const mockUser = {
-  id: 1,
-  username: 'TestUser',
-  email: 'test@example.com',
-  profile_picture: null,
-  bio: 'Test bio',
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
-type Review = {
-  media: any;
-  id?: number;
+type Media = {
+  id: number;
   cover_image?: string;
   title_english?: string;
   title_romaji?: string;
-  title?: string;
   type?: string;
 };
 
+type Review = {
+  id: number;
+  media: Media;
+  content: string;
+  rating?: number;
+  created_at: string;
+  likes_count?: number;
+};
+
+// Fixed Props type to include userId and onRefresh
 type Props = {
   data: Review[];
   loading: boolean;
   tab: 'reviews';
+  userId?: number;  // Added this
+  onRefresh?: () => void;  // Added this
 };
 
-export default function ReviewList({ data, loading, tab }: Props) {
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [userId, setUserId] = useState<number>(1); // Default to 1 for dev
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Mock setup: seed AsyncStorage once
-  useEffect(() => {
-    const seedMockUser = async () => {
-      const existingUser = await AsyncStorage.getItem('user');
-      if (!existingUser) {
-        await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-        await AsyncStorage.setItem('userId', String(mockUser.id));
-      }
-    };
-    seedMockUser();
-  }, []);
-
-  // Fetch reviews when component mounts
-  useEffect(() => {
-    if (userId) {
-      getUserReviews();
-    }
-  }, [userId]);
-
-  const getUserReviews = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`http://localhost:3000/api/reviews/user/${userId}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch reviews');
-      }
-
-      const reviewsData = await response.json();
-      console.log('User reviews:', reviewsData);
-      setReviews(reviewsData);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-      Alert.alert('Error', 'Failed to load reviews');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+export default function ReviewList({ data, loading, userId, onRefresh }: Props) {
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const handleDeleteReview = async (reviewId: number) => {
     Alert.alert(
@@ -91,21 +51,20 @@ export default function ReviewList({ data, loading, tab }: Props) {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            setDeletingId(reviewId);
             try {
-              const response = await fetch(
-                `http://localhost:3000/api/reviews/${reviewId}?user_id=${userId}`,
-                { method: 'DELETE' }
-              );
-
-              if (response.ok) {
-                Alert.alert('Success', 'Review deleted');
-                getUserReviews(); // Refresh list
+              await api.delete(`/api/reviews/${reviewId}`);
+              Alert.alert('Success', 'Review deleted');
+              onRefresh?.();
+            } catch (error) {
+              console.error('Delete review error:', error);
+              if (error instanceof ApiError) {
+                Alert.alert('Error', error.message);
               } else {
                 Alert.alert('Error', 'Failed to delete review');
               }
-            } catch (error) {
-              console.error(error);
-              Alert.alert('Error', 'Network error occurred');
+            } finally {
+              setDeletingId(null);
             }
           }
         }
@@ -113,90 +72,152 @@ export default function ReviewList({ data, loading, tab }: Props) {
     );
   };
 
-  if (isLoading) {
-    return <ActivityIndicator style={{ marginTop: 30 }} />;
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#4c00b4" />
+      </View>
+    );
   }
 
-if (!data || data.length === 0) {
+  if (!data || data.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons name="chatbox-outline" size={64} color="#ccc" />
+        <Text style={styles.emptyText}>No reviews yet</Text>
+        <Text style={styles.emptySubtext}>Your reviews will appear here</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.empty}>
-      <Ionicons name="library-outline" size={48} color="#ccc" />
-      <Text style={styles.emptyText}>Nothing here yet</Text>
-    </View>
+    <FlatList
+      data={data}
+      keyExtractor={(item) => String(item.id)}
+      contentContainerStyle={styles.listContainer}
+      renderItem={({ item }) => (
+        <View style={styles.reviewCard}>
+          {/* Media Section */}
+          <View style={styles.mediaSection}>
+            {item.media?.cover_image ? (
+              <Image 
+                source={{ uri: item.media.cover_image }} 
+                style={styles.coverImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.coverPlaceholder}>
+                <Ionicons name="image-outline" size={24} color="#999" />
+              </View>
+            )}
+            
+            <View style={styles.mediaInfo}>
+              <Text style={styles.mediaTitle} numberOfLines={2}>
+                {item.media?.title_english || 
+                 item.media?.title_romaji || 
+                 'Untitled'}
+              </Text>
+              {item.media?.type && (
+                <Text style={styles.mediaType}>{item.media.type}</Text>
+              )}
+            </View>
+          </View>
+
+          {/* Review Content */}
+          <View style={styles.reviewContent}>
+            {/* Rating and Date */}
+            <View style={styles.metaRow}>
+              {item.rating && (
+                <View style={styles.ratingContainer}>
+                  <Ionicons name="star" size={16} color="#fbbf24" />
+                  <Text style={styles.rating}>{item.rating}/10</Text>
+                </View>
+              )}
+              <Text style={styles.date}>
+                {formatDate(item.created_at)}
+              </Text>
+            </View>
+
+            {/* Review Text */}
+            <Text style={styles.reviewText} numberOfLines={6}>
+              {item.content || 'No review text'}
+            </Text>
+
+            {/* Actions Row */}
+            <View style={styles.actionsRow}>
+              {item.likes_count !== undefined && (
+                <View style={styles.likesContainer}>
+                  <Ionicons name="heart-outline" size={16} color="#666" />
+                  <Text style={styles.likesText}>
+                    {item.likes_count} {item.likes_count === 1 ? 'like' : 'likes'}
+                  </Text>
+                </View>
+              )}
+              
+              {userId && (
+                <TouchableOpacity
+                  onPress={() => handleDeleteReview(item.id)}
+                  disabled={deletingId === item.id}
+                  style={styles.deleteButton}
+                >
+                  {deletingId === item.id ? (
+                    <ActivityIndicator size="small" color="#dc2626" />
+                  ) : (
+                    <>
+                      <Ionicons name="trash-outline" size={16} color="#dc2626" />
+                      <Text style={styles.deleteText}>Delete</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      )}
+    />
   );
 }
 
-return (
-  <FlatList
-    data={reviews}
-    keyExtractor={(item) => String(item.id)}
-    renderItem={({ item }) => {
-      console.log('Item structure:', JSON.stringify(item, null, 2));
-      
-      return (
-        <View style={styles.row}>
-          {item?.media?.cover_image ? (
-            <Image source={{ uri: item.media.cover_image }} style={styles.cover} />
-          ) : (
-            <View style={styles.coverPlaceholder} />
-          )}
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title} numberOfLines={2}>
-              {item?.media?.title_english || item?.media?.title_romaji || 'Untitled'}
-            </Text>
-            <Text style={styles.content} numberOfLines={6}>
-              {item?.content || 'No Review Text'}
-            </Text>
-            <Text style={styles.meta}>{item?.media?.type || item?.type || 'Unknown'}</Text>
-          </View>
-        </View>
-      );
-    }}
-  />
-);
-
-}
-
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
+  listContainer: {
+    padding: 8,
   },
-  cover: {
-    width: 55,
-    height: 80,
-    borderRadius: 4,
-    marginRight: 12,
-  },
-  coverPlaceholder: {
-    width: 55,
-    height: 80,
-    backgroundColor: '#eee',
-    borderRadius: 4,
-    marginRight: 12,
-  },
-  title: {
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  meta: {
-    color: '#777',
-    fontSize: 12,
-  },
-  empty: {
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 60,
+    paddingVertical: 40,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
   },
   emptyText: {
-    marginTop: 10,
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+  },
+  emptySubtext: {
+    marginTop: 8,
+    fontSize: 14,
     color: '#999',
   },
   reviewCard: {
     backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginVertical: 8,
+    marginHorizontal: 8,
+    marginVertical: 6,
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
@@ -208,11 +229,22 @@ const styles = StyleSheet.create({
   mediaSection: {
     flexDirection: 'row',
     marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   coverImage: {
     width: 60,
     height: 90,
     borderRadius: 8,
+  },
+  coverPlaceholder: {
+    width: 60,
+    height: 90,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mediaInfo: {
     flex: 1,
@@ -223,51 +255,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#222',
+    marginBottom: 4,
   },
   mediaType: {
     fontSize: 12,
     color: '#666',
-    marginTop: 4,
+    textTransform: 'uppercase',
   },
   reviewContent: {
-    gap: 8,
+    gap: 12,
   },
-  ratingRow: {
+  metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   rating: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#fbbf24',
+    color: '#222',
   },
   date: {
     fontSize: 12,
     color: '#999',
   },
-  reviewTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
-  },
   reviewText: {
     fontSize: 14,
-    color: '#555',
+    color: '#444',
     lineHeight: 20,
   },
-  statsRow: {
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  likesContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    gap: 6,
   },
-  likes: {
-    fontSize: 14,
+  likesText: {
+    fontSize: 13,
     color: '#666',
   },
-  content: {
-    fontSize: 20,
-    color: '#666',
-    fontWeight: '300',
-  }
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: '#fee',
+  },
+  deleteText: {
+    fontSize: 13,
+    color: '#dc2626',
+    fontWeight: '500',
+  },
 });

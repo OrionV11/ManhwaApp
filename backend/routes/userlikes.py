@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
 from controllers import userlikes
+from dependencies import get_current_user_id 
+
 
 router = APIRouter(
     prefix="/likes",
@@ -23,7 +25,7 @@ class MediaLikeRequest(BaseModel):
 @router.post("/", status_code=status.HTTP_200_OK)
 def like_media(
     like_request: MediaLikeRequest,
-    user_id: int,  # TODO: Replace with authenticated user from token
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Add a media to user's likes"""
@@ -52,7 +54,7 @@ def unlike_media(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/user/{user_id}")
+@router.get("/user")
 def get_user_likes(
     user_id: int,
     db: Session = Depends(get_db)

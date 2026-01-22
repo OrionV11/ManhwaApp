@@ -1,112 +1,189 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import MediaList from '../components/profile/MediaList';
+import { useAuth } from '../contexts/AuthContext';
 import { Media } from '../services/Manhwa';
-
-
-const API_BASE_URL = 'http://localhost:3000';
+import { api, ApiError } from '../utils/api';
 
 type Props = {
-    label: string;
+  label?: string;
 }
 
-export default function ProfileReadList({label}: Props) {
-    const [loading, setLoading] = useState(false);
-    const [list, setList] = useState<Media[]>([]);
-    const [userId, setUserId] = useState<number>(1);
-    const router = useRouter();
+export default function ProfileReadList({ label }: Props) {
+  const [loading, setLoading] = useState(false);
+  const [list, setList] = useState<Media[]>([]);
+  const [tab, setTab] = useState<'reading' | 'completed'>('reading');
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
 
-
-    const handleMediaClick = (mediaId: number) => {
-    router.push(`/media/${mediaId}`)
+  const handleMediaClick = (mediaId: number) => {
+    router.push(`/media/${mediaId}`);
   };
 
+  const getReadingList = async (status: 'reading' | 'completed') => {
+    if (!user?.id) return;
 
-   const fetchReadList = async () => {
+    setLoading(true);
     try {
-        const response = await fetch(`${API_BASE_URL}/api/reading-progress/${userId}`);
-
-        if(response.ok) {
-            const data = await response.json()
-            setList(data);
-        } else {
-            console.error('Error fetching list', response.status)
-        }} catch (error) {
-            console.error('Error fetching list', error)
-
-        }
-    };
-
-    const handleRemoveFromList = (mediaId: number) => {
-        Alert.alert(
-            'Delete Review',
-            'Are you sure you want to delete this review?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const response = await fetch(
-                `http://localhost:3000/api/reading-progress/${userId}/${mediaId}`,
-                { method: 'DELETE' }
-              );
-
-              if (response.ok) {
-                Alert.alert('Success', 'Review deleted');
-                fetchReadList(); // Refresh list
-              } else {
-                Alert.alert('Error', 'Failed to delete review');
-              }
-            } catch (error) {
-              console.error(error);
-              Alert.alert('Error', 'Network error occurred');
-            }
-          }
-        }
-      ]
-    );
+      const endpoint = status === 'completed' 
+        ? `/api/reading-progress/completed/${user.id}`
+        : `/api/reading-progress/${user.id}`;
+      
+      const data = await api.get<Media[]>(endpoint);
+      setList(data);
+    } catch (error) {
+      console.error('Error fetching reading list:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', 'Failed to load reading list');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-  if (userId) {
-    fetchReadList();
-  }
-}, [userId]);
+    if (user?.id) {
+      getReadingList(tab);
+    }
+  }, [user?.id, tab]);
 
+  // Show login prompt if not authenticated
+  if (!isAuthenticated || !user) {
     return (
-  <View style={styles.container}>
-    {/* Header */}
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Text>← Back</Text>
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Read List</Text>
-      <View style={styles.placeholder} />
+      <View style={styles.centerContainer}>
+        <Ionicons name="book-outline" size={64} color="#ccc" />
+        <Text style={styles.notLoggedInTitle}>Login Required</Text>
+        <Text style={styles.notLoggedInText}>
+          Please log in to view your reading list
+        </Text>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => router.push('/auth')}
+        >
+          <Text style={styles.loginButtonText}>Log In</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#222" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Reading List</Text>
+        </View>
+        <View style={styles.placeholder} />
+      </View>
+
+      {/* Tabs */}
+      <View style={styles.tabs}>
+        <TouchableOpacity
+          style={[styles.tab, tab === 'reading' && styles.tabActive]}
+          onPress={() => setTab('reading')}
+        >
+          <Text style={[styles.tabText, tab === 'reading' && styles.tabTextActive]}>
+            Currently Reading
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, tab === 'completed' && styles.tabActive]}
+          onPress={() => setTab('completed')}
+        >
+          <Text style={[styles.tabText, tab === 'completed' && styles.tabTextActive]}>
+            Completed
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      <ScrollView style={styles.scrollView}>
+        {loading && list.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4c00b4" />
+            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
+        ) : list.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons 
+              name={tab === 'reading' ? 'book-outline' : 'checkmark-circle-outline'} 
+              size={80} 
+              color="#ccc" 
+            />
+            <Text style={styles.emptyText}>
+              {tab === 'reading' ? 'Not reading anything yet' : 'No completed items'}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {tab === 'reading' 
+                ? 'Start reading manga and anime to track your progress'
+                : 'Items you complete will appear here'
+              }
+            </Text>
+          </View>
+        ) : (
+          <MediaList
+            data={list}
+            loading={loading}
+            tab={tab}
+            onMediaClick={handleMediaClick}
+          />
+        )}
+      </ScrollView>
     </View>
-
-    {/* Media List */}
-    {loading ? (
-      <ActivityIndicator size="large" color="#3b82f6" />
-    ) : (
-      <MediaList
-        data={list}
-        loading={loading}
-        tab="reading"
-        onMediaClick={handleMediaClick}
-      />
-    )}
-  </View>
-);
-
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  notLoggedInTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#333',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  notLoggedInText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  loginButton: {
+    backgroundColor: '#4c00b4',
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   header: {
     flexDirection: 'row',
@@ -115,11 +192,17 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 15,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
   backButton: {
     padding: 5,
+    width: 40,
+  },
+  headerCenter: {
+    alignItems: 'center',
+    flex: 1,
   },
   headerTitle: {
     fontSize: 20,
@@ -127,8 +210,60 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   placeholder: {
-    width: 50,
+    width: 40,
+  },
+  tabs: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: {
+    borderBottomColor: '#4c00b4',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  tabTextActive: {
+    color: '#4c00b4',
+    fontWeight: '700',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  loadingContainer: {
+    paddingVertical: 60,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    paddingVertical: 80,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#222',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });
-
-

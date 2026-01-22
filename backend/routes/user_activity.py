@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from database import get_db
 from controllers import user_activity
+from dependencies import get_current_user_id
 
 router = APIRouter(
     prefix="/activity",
@@ -26,7 +27,7 @@ class ActivityCreate(BaseModel):
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_activity(
     activity: ActivityCreate,
-    user_id: int,  # TODO: Replace with authenticated user
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Create a new activity entry"""
@@ -41,9 +42,9 @@ def create_activity(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/user/{user_id}")
+@router.get("/user")
 def get_user_activity(
-    user_id: int,
+    user_id: int = Depends(get_current_user_id),
     limit: int = Query(50, ge=1, le=100),
     activity_type: Optional[str] = Query(None, pattern="^(STARTED|COMPLETED|UPDATED_PROGRESS|REVIEWED|LIKED|ADDED)$"),
     db: Session = Depends(get_db)
@@ -61,7 +62,7 @@ def get_user_activity(
 
 @router.get("/feed")
 def get_feed(
-    user_id: int,  # TODO: Replace with authenticated user
+    user_id: int = Depends(get_current_user_id),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
@@ -107,7 +108,7 @@ def get_media_activity(
 @router.delete("/{activity_id}")
 def delete_activity(
     activity_id: int,
-    user_id: int,  # TODO: Replace with authenticated user
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Delete an activity"""

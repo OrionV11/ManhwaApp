@@ -1,87 +1,118 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../../contexts/AuthContext';
 import { Media, User } from '../../services/Manhwa';
+import { api, ApiError } from '../../utils/api';
 import MediaList from './MediaList';
 import ReviewsList from './ReviewList';
 import SettingsModal from './SettingsModal';
 
-const API_BASE_URL = 'http://localhost:3000';
+type TabType = 'reading' | 'completed' | 'favorites' | 'reviews';
+
+type Stats = {
+  stats: {
+    reading_progress: number;
+    completed: number;
+    fav_count: number;
+    followers: number;
+    reviews: number;
+  };
+};
 
 type Props = {
   user: User;
   label: string;
-  
 };
 
-
 export default function ProfileView({ user, label }: Props) {
-  const [tab, setTab] = useState<'reading' | 'completed' | 'favorites' | 'reviews'>('reading');
+  const [tab, setTab] = useState<TabType>('reading');
   const [list, setList] = useState<Media[]>([]);
-  const [stats, setStats] = useState<any>(null); // stats object from backend
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  
   const router = useRouter();
-  // Fetch stats only once on mount
+  const { user: authUser, isAuthenticated } = useAuth();
+
   useEffect(() => {
     fetchStats();
-  }, [user]);
+  }, [user.id]);
 
-  // Fetch tab data every time tab changes
   useEffect(() => {
     fetchTab(tab);
   }, [tab]);
 
   const handleMediaClick = (mediaId: number) => {
-    router.push(`/media/${mediaId}`)
+    router.push(`/media/${mediaId}`);
   };
 
   const fetchStats = async () => {
+    setStatsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/stats/${user.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      } else {
-        console.error('Failed to fetch stats', res.status);
-      }
+      const data = await api.get<Stats>(`/api/stats/me`, true, true);
+      setStats(data);
     } catch (err) {
-      console.error('Error fetching stats', err);
+      console.error('Error fetching stats:', err);
+      if (err instanceof ApiError && err.status !== 401) {
+        setStats({
+          stats: {
+          reading_progress: 0,
+          completed: 0,
+          fav_count: 0,
+          followers: 0,
+          reviews: 0,
+          }
+        })
+        // Don't show error for auth issues as they're handled globally
+        setError('Failed to load stats');
+      }
+    } finally {
+      setStatsLoading(false);
     }
   };
 
-  const fetchTab = async (tabName: string) => {
+  const fetchTab = async (tabName: TabType) => {
     setLoading(true);
-    let url = '';
+    setError(null);
+    
+    const urlMap: Record<TabType, string> = {
+      favorites: `/api/favorites/me`,
+      completed: `/api/reading-progress/completed/me`,
+      reading: `/api/reading-progress/me`,
+      reviews: `/api/reviews/user/me`,
+    };
 
-    if (tabName === 'favorites') {
-      url = `/api/favorites/${user.id}`;
-    } else if (tabName === 'completed') {
-      url = `/api/reading-progress/completed/${user.id}`;
-    } else if (tabName === 'reading') {
-      url = `/api/reading-progress/${user.id}`;
-    } else if (tabName === 'reviews') {
-      url = `/api/reviews/user/${user.id}`;
-    } else {
-      console.error('Unknown tab', tabName);
-      setLoading(false);
-      return;
-    }
-
+    const url = urlMap[tabName];
 
     try {
-      const res = await fetch(`${API_BASE_URL}${url}`);
-      if (res.ok) setList(await res.json());
+      const data = await api.get<Media[]>(url, isAuthenticated);
+      setList(data);
     } catch (err) {
-      console.error(`Error fetching ${tabName}`, err);
+      console.error(`Error fetching ${tabName}:`, err);
+      if (err instanceof ApiError && err.status !== 401) {
+        setError(`Failed to load ${tabName}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const tabs: TabType[] = ['reading', 'completed', 'favorites', 'reviews'];
+  const isOwnProfile = authUser?.id === user.id;
+
+  if (statsLoading && !stats) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4c00b4" />
+      </View>
+    );
+  }
 
   return (
-    <ScrollView>
+    <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.username}>{user.username}</Text>
@@ -99,10 +130,10 @@ export default function ProfileView({ user, label }: Props) {
 
       {/* Tabs */}
       <View style={styles.tabs}>
-        {['reading', 'completed', 'favorites', 'reviews'].map(t => (
+        {tabs.map(t => (
           <TouchableOpacity
             key={t}
-            onPress={() => setTab(t as any)}
+            onPress={() => setTab(t)}
             style={[styles.tab, tab === t && styles.tabActive]}
           >
             <Text style={tab === t ? styles.tabTextActive : styles.tabText}>
@@ -112,71 +143,74 @@ export default function ProfileView({ user, label }: Props) {
         ))}
       </View>
 
-      {/* Content */}
-    
-        {tab !== 'reviews' && (
-          <MediaList
-            data={list}
-            loading={loading}
-            tab={tab}
-            onMediaClick={handleMediaClick}
-        />
-        )}
-              
-      {tab === 'reviews' && (
-      <ReviewsList 
-        data={list as any} 
-        loading={loading} 
-        tab="reviews" 
-      />
+      {/* Error State */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={() => fetchTab(tab)} style={styles.retryButton}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
-     
-     {/* Buttons */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          onPress={() => {
-            router.push(`/user-lists`)
-          }}>
-          <Text>Lists</Text>  
-          </TouchableOpacity>
-        
-        <TouchableOpacity 
-          onPress={() => router.push('../../screens/ProfileReadList')}>
-            <Text>Read List </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          onPress={() => router.push('../../screens/ProfileLikes')}>
-            <Text>Likes</Text>
-        </TouchableOpacity>
+      {/* Content */}
+      {tab !== 'reviews' && (
+        <MediaList
+          data={list}
+          loading={loading}
+          tab={tab}
+          onMediaClick={handleMediaClick}
+        />
+      )}
+              
+      {tab === 'reviews' && (
+        <ReviewsList 
+          data={list as any} 
+          loading={loading} 
+          tab="reviews"
+          userId={isOwnProfile ? user.id : undefined}
+          onRefresh={() => fetchTab('reviews')}
+        />
+      )}
 
-        <TouchableOpacity
-          onPress={() => router.push('../../screens/ProfileReviews')}>
-            <Text>Reviews</Text>
-        </TouchableOpacity>
-  
-        <Action label="Following"/>
-        <Action label="Followers"/>
-       
-        <TouchableOpacity onPress={() => {
-          console.log('setttings clicked');
-          setSettingsVisible(true)}}>
-          <Text>Settings</Text>
-        </TouchableOpacity>
+      {/* Action Buttons - Only show for own profile */}
+      {isOwnProfile && (
+        <View style={styles.actions}>
+          <ActionButton 
+            label="Lists" 
+            onPress={() => router.push('/user-lists')} 
+          />
+          <ActionButton 
+            label="Read List" 
+            onPress={() => router.push('/screens/ProfileReadList')} 
+          />
+          <ActionButton 
+            label="Likes" 
+            onPress={() => router.push('/screens/ProfileLikes')} 
+          />
+          <ActionButton 
+            label="Reviews" 
+            onPress={() => router.push('/screens/ProfileReviews')} 
+          />
+          <ActionButton label="Following" onPress={() => {}} />
+          <ActionButton label="Followers" onPress={() => {}} />
+          <ActionButton 
+            label="Settings" 
+            onPress={() => setSettingsVisible(true)} 
+          />
+        </View>
+      )}
 
-      </View>
-      <SettingsModal
+      {isOwnProfile && (
+        <SettingsModal
           visible={settingsVisible}
           onClose={() => setSettingsVisible(false)}
           user={user}
-          />
+        />
+      )}
     </ScrollView>
-
   );
-
 }
-
 
 const Stat = ({ label, value }: { label: string; value: number }) => (
   <View style={styles.statBox}>
@@ -185,13 +219,20 @@ const Stat = ({ label, value }: { label: string; value: number }) => (
   </View>
 );
 
-const Action = ({ label }: { label: string }) => (
-  <TouchableOpacity style={styles.action}>
-    <Text>{label}</Text>
+const ActionButton = ({ label, onPress }: { label: string; onPress: () => void }) => (
+  <TouchableOpacity style={styles.action} onPress={onPress}>
+    <Text style={styles.actionText}>{label}</Text>
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff' },
+  loadingContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    paddingTop: 100,
+  },
   header: { alignItems: 'center', padding: 20 },
   username: { fontSize: 22, fontWeight: '700' },
   bio: { marginTop: 6, color: '#666', textAlign: 'center' },
@@ -201,12 +242,29 @@ const styles = StyleSheet.create({
   statValue: { fontWeight: '700', fontSize: 18 },
   statLabel: { fontSize: 12, color: '#777' },
 
-  actions: { margin: 10, flexDirection: 'column', justifyContent: 'space-around', gap: 12, alignItems: 'center' },
-  action: { padding: 10, backgroundColor: '#eee', borderRadius: 8 },
+  actions: { margin: 20, gap: 12 },
+  action: { padding: 14, backgroundColor: '#eee', borderRadius: 8, alignItems: 'center' },
+  actionText: { fontSize: 16, fontWeight: '500' },
 
   tabs: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#eee' },
   tab: { flex: 1, padding: 12, alignItems: 'center' },
   tabActive: { borderBottomWidth: 2, borderColor: '#4c00b4' },
   tabText: { color: '#999' },
   tabTextActive: { color: '#4c00b4', fontWeight: '600' },
+
+  errorContainer: { 
+    padding: 16, 
+    backgroundColor: '#ffe6e6', 
+    margin: 10, 
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  errorText: { color: '#cc0000', textAlign: 'center', marginBottom: 8 },
+  retryButton: { 
+    paddingVertical: 8, 
+    paddingHorizontal: 16,
+    backgroundColor: '#4c00b4',
+    borderRadius: 6,
+  },
+  retryText: { color: '#fff', fontWeight: '600' },
 });

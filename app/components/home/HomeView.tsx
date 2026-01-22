@@ -16,11 +16,9 @@ export default function HomeView() {
         return <Manhwa />;
       
       case 'reviews':
-        // TODO: Create ReviewsList component
         return <ReviewsList />;
       
       case 'folders':
-        // TODO: Create FoldersList component
         return <FoldersList />
       
       default:

@@ -1,12 +1,13 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from typing import Optional
 from controllers import profile
+from dependencies import get_current_user_id
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
-@router.put("/{user_id}")
+@router.put("/")
 def update_profile(
-    user_id: int,
+    user_id: int = Depends(get_current_user_id),
     username: Optional[str] = None,
     bio: Optional[str] = None,
     profile_picture: Optional[str] = None,

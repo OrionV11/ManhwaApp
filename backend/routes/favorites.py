@@ -4,12 +4,13 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
 from controllers import favorites
+from dependencies import get_current_user_id
 
 router = APIRouter(prefix="/favorites", tags=["favorites"])
 
 
-@router.put("/{user_id}/add/{media_id}")
-def add_to_favorites(user_id: int, media_id: int, db: Session = Depends(get_db)):
+@router.put("/add/{media_id}")
+def add_to_favorites(media_id: int, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         result = favorites.add_favorite(db, user_id, media_id)
         return result
@@ -19,8 +20,8 @@ def add_to_favorites(user_id: int, media_id: int, db: Session = Depends(get_db))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.delete("/{user_id}/remove/{media_id}")
-def remove_from_favorites(user_id: int, media_id: int, db: Session = Depends(get_db)):
+@router.delete("/remove/{media_id}")
+def remove_from_favorites(media_id: int, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         result = favorites.remove_favorite(db, user_id, media_id)
         return result
@@ -30,8 +31,8 @@ def remove_from_favorites(user_id: int, media_id: int, db: Session = Depends(get
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.get("/{user_id}")
-def get_favorites(user_id: int, db: Session = Depends(get_db)):
+@router.get("/")
+def get_favorites(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         result = favorites.get_user_favorites(db, user_id)
         return result
