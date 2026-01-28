@@ -1,17 +1,20 @@
+//FolderDetail.tsx
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { api } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { Media } from '../../services/Manhwa';
+import { api, ApiError } from '../../utils/api';
+
 
 interface FolderItem {
     id: number;
@@ -44,6 +47,7 @@ export default function FolderDetail({ folderId }: Props) {
     //loading states
     const [loading, setLoading] = useState(false);
     const [folderLoading, setFolderLoading] = useState(false);
+
     const router = useRouter();
     
 
@@ -52,73 +56,80 @@ export default function FolderDetail({ folderId }: Props) {
     const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
 
     //User state
-    const [userId, setUserId] = useState<number>(1);
+    const { user, isAuthenticated } = useAuth();
 
 
+
+    useEffect(() => {
+    if (user?.id) {
+      fetchFolder();
+    }
+  }, [user?.id]);
 
     const fetchFolder = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(`http://localhost:3000/api/folders/${folderId}?user_id=${userId}`)
+    if (!user?.id) return;
 
-            if (!response.ok) {
-                throw new Error('Can not fetch');
-            }
-
-            const folderData = await response.json();
-            console.log('Folder data:', JSON.stringify(folderData, null, 2));
-            setFolder(folderData)
-
-            
-        } catch(error) {
-            console.error('Error fetching reviews:', error);
-            Alert.alert('Error', 'Failed to load reviews');
-        } finally {
-            setLoading(false);
+    setLoading(true);
+    try {
+      const folderData = await api.get<Folder>(`/api/folders/${folderId}`);
+      console.log('User reviews:', folderData);
+      setFolder(folderData);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', 'Failed to load reviews');
+      }
+    } finally {
+      setLoading(false);
     }
-};
+  };
 
     const fetchMediaItems = async () => {
-        if (!folder?.items || folder.items.length == 0) return;
-        setLoading(true);
-        try { /*
-            const response = await fetch(
-                `http://localhost:3000/api/folders/${folderId}/items?user_id=${userId}`
-            ); */
+    if (!user?.id) return;
+    if (!folder?.items || folder.items.length === 0) return;
+    
+    setLoading(true);
+    try { 
+        const mediaPromises = folder.items.map(item =>
+            api.get<Media>(`/api/media/${item.media_id}`, false)  // ✅ Use api utility, public endpoint
+        );
 
-            const mediaPromises = folder.items.map(item =>
-                api.getMediaById(item.media_id)
-            );
+        const mediaDetails = await Promise.all(mediaPromises);
 
-            const mediaDetails = await Promise.all(mediaPromises);
+        const enrichedItems: MediaItem[] = folder.items.map((item, index) => ({
+            ...mediaDetails[index],
+            media_id: item.media_id,
+            notes: item.notes,
+            added_at: item.added_at,
+        }));
 
-            const enrichedItems: MediaItem[] = folder.items.map((item, index) => ({
-                ...mediaDetails[index],
-                media_id: item.media_id,
-                notes: item.notes,
-                added_at: item.added_at,
-            }));
+        setMediaItems(enrichedItems);
 
-            setMediaItems(enrichedItems);
-
-        } catch(error) {
-            console.error('Error fetching reviews:', error);
-            Alert.alert('Error', 'Failed to load reviews');
-        } finally {
-            setLoading(false);
+    } catch(error) {
+        console.error('Error fetching media items:', error);
+        if (error instanceof ApiError) {
+            Alert.alert('Error', error.message);
+        } else {
+            Alert.alert('Error', 'Failed to load media items');
         }
-    };
+    } finally {
+        setLoading(false);
+    }
+};
 
     const handleMediaClick = (mediaId: number) => {
         router.push(`/media/${mediaId}`);
     }
 
 
+
     useEffect(() => {
-        if (folderId && userId) {
+        if (folderId && user) {
             fetchFolder();
         }
-    }, [folderId, userId]);
+    }, [folderId, user]);
 
     useEffect(() => {
         if (folder?.items) {

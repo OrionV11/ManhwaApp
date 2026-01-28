@@ -116,6 +116,7 @@ export interface UserActivityStats {
 
 // API Response types
 export interface LoginResponse {
+    token: any;
     access_token: string;
     token_type: string;
     user: {

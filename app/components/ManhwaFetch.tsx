@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Media } from '../services/Manhwa';
 
+
+const API_BASE_URL = 'http://192.168.1.135:3000';  
 const ManhwaFetch: React.FC = () => {
   const [media, setMedia] = useState<Media[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,8 +22,8 @@ const ManhwaFetch: React.FC = () => {
     
     try {
       const url = query
-        ? `http://localhost:3000/api/media/search?query=${encodeURIComponent(query)}`
-        : 'http://localhost:3000/api/media/trending?limit=10';
+        ? `${API_BASE_URL}/api/media/search?query=${encodeURIComponent(query)}`
+        : `${API_BASE_URL}/api/media/trending?limit=10`;
       
       const response = await fetch(url);
       

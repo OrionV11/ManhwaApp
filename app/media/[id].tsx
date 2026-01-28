@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MediaInteractionModal from '../components/MediaInteractionModal';
 import { Media } from '../services/Manhwa';
+const API_BASE_URL = 'http://192.168.1.135:3000';  
 
 export default function ManhwaDetail() {
     const { id } = useLocalSearchParams()
@@ -16,7 +17,7 @@ export default function ManhwaDetail() {
         setError(null);
 
         try {
-            const response = await fetch(`http://localhost:3000/api/media/${id}`);
+            const response = await fetch(`${API_BASE_URL}/api/media/${id}`);
             
             if (!response.ok) {
                 throw new Error('Failed to fetch media detail');
@@ -142,6 +143,13 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    mediaTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        color: '#1f2937',
+
     },
     title: {
         fontSize: 24,

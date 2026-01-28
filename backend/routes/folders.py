@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from dependencies import get_current_user_id
+from dependencies import get_current_user_id, get_optional_current_user_id
 from database import get_db
+from models import Folder, FolderItem, User, Media
 from schemas.folders import (
     FolderCreate, FolderUpdate, FolderResponse, 
     FolderItemCreate, FolderItemUpdate, FolderWithItems
@@ -10,6 +11,55 @@ from schemas.folders import (
 from controllers import folders as folder_controller
 
 router = APIRouter(prefix="/folders", tags=["folders"])
+
+@router.get("/public")
+def get_public_folders(
+    sort: str = "popular",  # popular, recent
+    limit: int = 50,
+    db: Session = Depends(get_db)
+):
+    """Get public folders sorted by popularity"""
+    
+    query = db.query(Folder).filter(Folder.is_public == True)
+    
+    if sort == "popular":
+        query = query.order_by(Folder.likes_count.desc())
+    elif sort == "recent":
+        query = query.order_by(Folder.created_at.desc())
+    
+    folders = query.limit(limit).all()
+    
+    result = []
+    for folder in folders:
+        user = db.query(User).filter(User.id == folder.user_id).first()
+        item_count = db.query(FolderItem).filter(FolderItem.folder_id == folder.id).count()
+        
+        # Get preview images
+        items = db.query(FolderItem).filter(FolderItem.folder_id == folder.id).limit(4).all()
+        preview_images = []
+        for item in items:
+            media = db.query(Media).filter(Media.id == item.media_id).first()
+            if media and media.cover_image:
+                preview_images.append(media.cover_image)
+        
+        result.append({
+            "id": folder.id,
+            "user_id": folder.user_id,
+            "title": folder.title,
+            "description": folder.description,
+            "is_public": folder.is_public,
+            "likes_count": folder.likes_count or 0,
+            "item_count": item_count,
+            "created_at": folder.created_at.isoformat(),
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "profile_picture": user.profile_picture,
+            } if user else None,
+            "preview_images": preview_images,
+        })
+    
+    return result
 
 @router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
 def create_folder(
@@ -30,7 +80,7 @@ def create_folder(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("", response_model=List[dict])
+@router.get("/me", response_model=List[dict])
 def get_user_folders(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
@@ -152,3 +202,4 @@ def update_item_notes(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+

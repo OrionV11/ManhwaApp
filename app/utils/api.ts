@@ -2,7 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://192.168.1.135:3000';  
 
 export class ApiError extends Error {
   status: number;
@@ -25,6 +25,8 @@ type RequestOptions = {
 async function getAuthToken(): Promise<string | null> {
   return await AsyncStorage.getItem('authToken');
 }
+
+
 
 export async function apiRequest<T = any>(
   endpoint: string,
@@ -49,7 +51,9 @@ export async function apiRequest<T = any>(
       const token = await getAuthToken();
       if (token) {
         requestHeaders['Authorization'] = `Bearer ${token}`;
+        console.log('Token added to request')
       } else {
+        console.log('No token found')
         throw new ApiError('No authentication token found', 401);
       }
     }

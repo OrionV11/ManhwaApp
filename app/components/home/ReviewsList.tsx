@@ -1,193 +1,206 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import { api, ApiError } from '../../utils/api';
 
-const mockUser = {
-  id: 1,
-  username: 'TestUser',
-  email: 'test@example.com',
-  profile_picture: null,
-  bio: 'Test bio',
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+type Review = {
+  id: number;
+  rating: number;
+  title?: string;
+  content: string;
+  likes_count: number;
+  created_at: string;
+  user: {
+    id: number;
+    username: string;
+    profile_picture?: string;
+  };
+  media: {
+    id: number;
+    title_english?: string;
+    title_romaji: string;
+    cover_image?: string;
+    type: string;
+  };
 };
 
-
 export default function ReviewsList() {
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState<number>(1); // Default to 1 for dev
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
-  // Mock setup: seed AsyncStorage once
   useEffect(() => {
-    const seedMockUser = async () => {
-      const existingUser = await AsyncStorage.getItem('user');
-      if (!existingUser) {
-        await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-        await AsyncStorage.setItem('userId', String(mockUser.id));
-      }
-    };
-    seedMockUser();
+    fetchPublicReviews();
   }, []);
 
-  // Fetch reviews when component mounts
-  useEffect(() => {
-    if (userId) {
-      getUserReviews();
+  const fetchPublicReviews = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
     }
-  }, [userId]);
 
-  const getUserReviews = async () => {
-    setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3000/api/reviews/user/${userId}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch reviews');
-      }
-
-      const reviewsData = await response.json();
-      console.log('User reviews:', reviewsData);
-      setReviews(reviewsData);
+      // Fetch public reviews sorted by popularity
+      const data = await api.get<Review[]>(
+        '/api/reviews/public?sort=popular&limit=50',
+        false  // Public endpoint, no auth required
+      );
+      setReviews(data);
     } catch (error) {
       console.error('Error fetching reviews:', error);
-      Alert.alert('Error', 'Failed to load reviews');
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', 'Failed to load reviews');
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleDeleteReview = async (reviewId: number) => {
-    Alert.alert(
-      'Delete Review',
-      'Are you sure you want to delete this review?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const response = await fetch(
-                `http://localhost:3000/api/reviews/${reviewId}?user_id=${userId}`,
-                { method: 'DELETE' }
-              );
-
-              if (response.ok) {
-                Alert.alert('Success', 'Review deleted');
-                getUserReviews(); // Refresh list
-              } else {
-                Alert.alert('Error', 'Failed to delete review');
-              }
-            } catch (error) {
-              console.error(error);
-              Alert.alert('Error', 'Network error occurred');
-            }
-          }
-        }
-      ]
-    );
+  const handleLikeReview = async (reviewId: number) => {
+    try {
+      await api.post(`/api/reviews/${reviewId}/like`, {});
+      // Refresh to show updated like count
+      fetchPublicReviews();
+    } catch (error) {
+      console.error('Like error:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      }
+    }
   };
-
 
   const handleMediaClick = (mediaId: number) => {
-    router.push(`/media/${mediaId}`)
+    router.push(`/media/${mediaId}`);
   };
+
+  const handleUserClick = (userId: number) => {
+    router.push(`/user/${userId}`);
+  };
+
+  const renderReview = ({ item }: { item: Review }) => (
+    <View style={styles.reviewCard}>
+      {/* User Info */}
+      <TouchableOpacity
+        style={styles.userSection}
+        onPress={() => handleUserClick(item.user.id)}
+      >
+        {item.user.profile_picture ? (
+          <Image
+            source={{ uri: item.user.profile_picture }}
+            style={styles.userAvatar}
+          />
+        ) : (
+          <View style={styles.userAvatarPlaceholder}>
+            <Ionicons name="person" size={20} color="#999" />
+          </View>
+        )}
+        <Text style={styles.username}>{item.user.username}</Text>
+        <Text style={styles.date}>
+          • {new Date(item.created_at).toLocaleDateString()}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Media Info */}
+      <TouchableOpacity
+        style={styles.mediaSection}
+        onPress={() => handleMediaClick(item.media.id)}
+      >
+        {item.media.cover_image ? (
+          <Image
+            source={{ uri: item.media.cover_image }}
+            style={styles.coverImage}
+          />
+        ) : (
+          <View style={styles.coverPlaceholder}>
+            <Ionicons name="image-outline" size={24} color="#999" />
+          </View>
+        )}
+        <View style={styles.mediaInfo}>
+          <Text style={styles.mediaTitle} numberOfLines={2}>
+            {item.media.title_english || item.media.title_romaji}
+          </Text>
+          <Text style={styles.mediaType}>{item.media.type}</Text>
+          <View style={styles.ratingBadge}>
+            <Ionicons name="star" size={16} color="#fbbf24" />
+            <Text style={styles.rating}>{item.rating}/10</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {/* Review Content */}
+      <View style={styles.reviewContent}>
+        {item.title && (
+          <Text style={styles.reviewTitle}>{item.title}</Text>
+        )}
+        <Text style={styles.reviewText} numberOfLines={4}>
+          {item.content}
+        </Text>
+      </View>
+
+      {/* Actions */}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.likeButton}
+          onPress={() => handleLikeReview(item.id)}
+        >
+          <Ionicons name="heart-outline" size={20} color="#dc2626" />
+          <Text style={styles.likesText}>{item.likes_count}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   if (loading && reviews.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color="#4c00b4" />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Reviews</Text>
-        <Text style={styles.headerSubtitle}>{reviews.length} reviews</Text>
+        <Text style={styles.headerTitle}>Popular Reviews</Text>
+        <Text style={styles.headerSubtitle}>
+          {reviews.length} reviews from the community
+        </Text>
       </View>
 
       {reviews.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>You haven't written any reviews yet</Text>
+          <Ionicons name="star-outline" size={64} color="#ccc" />
+          <Text style={styles.emptyText}>No reviews yet</Text>
+          <Text style={styles.emptySubtext}>
+            Be the first to write a review!
+          </Text>
         </View>
       ) : (
-        reviews.map((review) => (
-          <TouchableOpacity onPress={() => handleMediaClick(review.media?.id || review.media_id)}>
-          <View key={review.review_id} style={styles.reviewCard}>
-            
-            {/* Media Info */}
-            <View style={styles.mediaSection}>
-              {review.media?.cover_image ? (
-                <Image
-                  source={{ uri: review.media.cover_image }}
-                  style={styles.coverImage}
-                />
-              ) : (
-                <View style={styles.coverPlaceholder}>
-                  <Text>No Image</Text>
-                </View>
-              )}
-              <View style={styles.mediaInfo}>
-                <Text style={styles.mediaTitle}>
-                  {review.media?.title_english || review.media.title_romaji || 'Unknown Title'}
-                </Text>
-                <Text style={styles.mediaType}>{review.type || 'ANIME'}</Text>
-              </View>
-            </View>
-
-            {/* Review Content */}
-            <View style={styles.reviewContent}>
-              <View style={styles.ratingRow}>
-                <Text style={styles.rating}>⭐ {review.rating}/10</Text>
-                <Text style={styles.date}>
-                  {new Date(review.created_at).toLocaleDateString()}
-                </Text>
-              </View>
-
-              {review.title && (
-                <Text style={styles.reviewTitle}>{review.title}</Text>
-              )}
-
-              {review.content && (
-                <Text style={styles.reviewText} numberOfLines={4}>
-                  {review.content}
-                </Text>
-              )}
-
-              <View style={styles.statsRow}>
-                <Text style={styles.likes}>❤️ {review.likes_count || 0} likes</Text>
-              </View>
-            </View>
-            
-
-            {/* Actions */}
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDeleteReview(review.review_id)}
-              >
-                <Text style={styles.deleteButtonText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          </TouchableOpacity>
-        ))
+        <FlatList
+          data={reviews}
+          renderItem={renderReview}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.listContainer}
+          onRefresh={() => fetchPublicReviews(true)}
+          refreshing={refreshing}
+        />
       )}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -202,14 +215,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    padding: 20,
+    padding: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#f0f0f0',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#222',
   },
   headerSubtitle: {
@@ -217,30 +230,73 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
   },
+  listContainer: {
+    padding: 16,
+  },
   emptyContainer: {
-    padding: 40,
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    padding: 40,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
     color: '#999',
-    textAlign: 'center',
+    marginTop: 8,
   },
   reviewCard: {
     backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginVertical: 8,
     borderRadius: 12,
     padding: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
+  userSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  userAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  userAvatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  username: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#222',
+  },
+  date: {
+    fontSize: 12,
+    color: '#999',
+    marginLeft: 4,
+  },
   mediaSection: {
     flexDirection: 'row',
     marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   coverImage: {
     width: 60,
@@ -251,7 +307,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 90,
     borderRadius: 8,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -264,65 +320,53 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#222',
+    marginBottom: 4,
   },
   mediaType: {
     fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+    color: '#999',
+    textTransform: 'uppercase',
+    marginBottom: 4,
   },
-  reviewContent: {
-    gap: 8,
-  },
-  ratingRow: {
+  ratingBadge: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 4,
   },
   rating: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#fbbf24',
+    color: '#222',
   },
-  date: {
-    fontSize: 12,
-    color: '#999',
+  reviewContent: {
+    marginBottom: 12,
   },
   reviewTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#222',
+    marginBottom: 8,
   },
   reviewText: {
     fontSize: 14,
     color: '#555',
     lineHeight: 20,
   },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  likes: {
-    fontSize: 14,
-    color: '#666',
-  },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 12,
+    alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: '#f0f0f0',
   },
-  deleteButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    backgroundColor: '#fee2e2',
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  deleteButtonText: {
-    color: '#dc2626',
+  likesText: {
+    fontSize: 14,
     fontWeight: '600',
+    color: '#666',
   },
 });
-

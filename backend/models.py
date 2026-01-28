@@ -2,6 +2,7 @@ from sqlalchemy import Column, Boolean, Integer, String, Text, DateTime, ARRAY, 
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
+from datetime import datetime
 
 # -------------------------
 # Dependent classes first
@@ -177,17 +178,19 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
     
+    # Core relationships
     media_lists = relationship("UserMediaList", back_populates="user", cascade="all, delete-orphan")
     likes = relationship("MediaLike", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan")
     folders = relationship("Folder", back_populates="user", cascade="all, delete-orphan")
-
-    favorites = relationship(
-        "Media",
-        secondary="media_likes",
-        back_populates="liked_by",
-        overlaps="likes,media_lists"
+    
+    # Follow relationships (UserFollow model)
+    following = relationship(
+        "UserFollow",
+        foreign_keys="UserFollow.follower_id",
+        back_populates="follower_user",
+        cascade="all, delete-orphan"
     )
     
     followers = relationship(
@@ -196,12 +199,13 @@ class User(Base):
         back_populates="following_user",
         cascade="all, delete-orphan"
     )
-    
-    following = relationship(
-        "UserFollow",
-        foreign_keys="UserFollow.follower_id",
-        back_populates="follower_user",
-        cascade="all, delete-orphan"
+
+    # Favorites (many-to-many through media_likes)
+    favorites = relationship(
+        "Media",
+        secondary="media_likes",
+        back_populates="liked_by",
+        overlaps="likes,media_lists"
     )
 
 # -------------------------

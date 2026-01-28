@@ -1,3 +1,4 @@
+//MediaInteractionModal.tsx
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -26,10 +27,12 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   mediaId: number;
+  mediaTitle: string;
   onReviewSubmitted?: () => void;
+  onStatusChanged?: () => void;  // ✅ Add callback for status changes
 };
 
-export default function MediaActionsModal({ visible, onClose, mediaId, onReviewSubmitted }: Props) {
+export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitle, onReviewSubmitted, onStatusChanged }: Props) {
   const { user } = useAuth();
   
   // Review state
@@ -45,18 +48,128 @@ export default function MediaActionsModal({ visible, onClose, mediaId, onReviewS
   // Tab state
   const [activeTab, setActiveTab] = useState<'review' | 'folders'>('review');
 
+  // ✅ NEW: Quick actions state
+  const [isLiked, setIsLiked] = useState(false);
+  const [readingStatus, setReadingStatus] = useState<'reading' | 'completed' | null>(null);
+  const [quickActionLoading, setQuickActionLoading] = useState(false);
+
   useEffect(() => {
     if (visible && user && activeTab === 'folders') {
       fetchFolders();
     }
   }, [visible, user, activeTab]);
 
+  // ✅ NEW: Check status when modal opens
+  useEffect(() => {
+    if (visible && user) {
+      checkMediaStatus();
+    }
+  }, [visible, user, mediaId]);
+
+  // ✅ NEW: Check if media is liked and reading status
+  const checkMediaStatus = async () => {
+    try {
+      // Check if liked
+      const likes = await api.get(`/api/favorites/me`);
+      setIsLiked(likes.some((item: any) => item.id === mediaId));
+
+      // Check reading status
+      const progress = await api.get(`/api/reading-progress/me`);
+      const mediaProgress = progress.find((item: any) => item.id === mediaId);
+      if (mediaProgress) {
+        setReadingStatus(mediaProgress.status === 'completed' ? 'completed' : 'reading');
+      } else {
+        setReadingStatus(null);
+      }
+    } catch (error) {
+      console.error('Error checking status:', error);
+    }
+  };
+
+  const handleLikeToggle = async () => {
+    if (!user) return;
+
+    setQuickActionLoading(true);
+    try {
+      if (isLiked) {
+        await api.delete(`/api/favorites/${mediaId}`);
+        setIsLiked(false);
+        Alert.alert('Success', 'Removed from favorites');
+      } else {
+        await api.put(`/api/favorites/add/${mediaId}`, {});
+        setIsLiked(true);
+        Alert.alert('Success', 'Added to favorites');
+      }
+      onStatusChanged?.();
+    } catch (error) {
+      console.error('Like error:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      }
+    } finally {
+      setQuickActionLoading(false);
+    }
+  };
+
+  const handleReadingToggle = async () => {
+    if (!user) return;
+
+    setQuickActionLoading(true);
+    try {
+      if (readingStatus === 'reading') {
+        await api.delete(`/api/reading-progress/${mediaId}`);
+        setReadingStatus(null);
+        Alert.alert('Success', 'Removed from reading list');
+      } else {
+        await api.put(`/api/reading-progress/add/${mediaId}`, {});
+          setReadingStatus('reading');
+          Alert.alert('Success', 'Added to reading list');
+
+        }
+      onStatusChanged?.();
+    } catch (error) {
+      console.error('Reading error:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      }
+    } finally {
+      setQuickActionLoading(false);
+    }
+  };
+
+  const handleCompletedToggle = async () => {
+  if (!user) return;
+
+  setQuickActionLoading(true);
+  try {
+    if (readingStatus === 'completed') {
+      // Remove from completed
+      await api.delete(`/api/reading-progress/remove/${mediaId}`);
+      setReadingStatus(null);
+      Alert.alert('Success', 'Removed from completed list');
+    } else {
+      // Use PUT with correct endpoint
+      await api.put(`/api/reading-progress/complete/${mediaId}`, {});
+      setReadingStatus('completed');
+      Alert.alert('Success', 'Marked as completed');
+    }
+    onStatusChanged?.();
+  } catch (error) {
+    console.error('Completed error:', error);
+    if (error instanceof ApiError) {
+      Alert.alert('Error', error.message);
+    }
+  } finally {
+    setQuickActionLoading(false);
+  }
+};
+
   const fetchFolders = async () => {
     if (!user) return;
 
     setFoldersLoading(true);
     try {
-      const data = await api.get<Folder[]>(`/api/folders/user/${user.id}`);
+      const data = await api.get<Folder[]>(`/api/folders/me`);
       setFolders(data);
     } catch (error) {
       console.error('Fetch folders error:', error);
@@ -94,19 +207,16 @@ export default function MediaActionsModal({ visible, onClose, mediaId, onReviewS
   const handleSubmitReview = async () => {
     console.log('=== SUBMIT REVIEW STARTED ===');
 
-    // Validate user is logged in
     if (!user?.id) {
       Alert.alert('Error', 'Please log in first');
       return;
     }
 
-    // Validate rating
     if (rating === 0) {
       Alert.alert('Error', 'Please select a rating');
       return;
     }
 
-    // Validate review text
     if (!reviewText.trim()) {
       Alert.alert('Error', 'Please write a review');
       return;
@@ -114,9 +224,7 @@ export default function MediaActionsModal({ visible, onClose, mediaId, onReviewS
 
     setReviewLoading(true);
     try {
-      // Prepare request body
       const requestBody = {
-        
         media_id: Number(mediaId),
         content: reviewText.trim(),
         rating: Number(rating),
@@ -125,18 +233,15 @@ export default function MediaActionsModal({ visible, onClose, mediaId, onReviewS
 
       console.log('POST body:', requestBody);
 
-      // Make API request
       const data = await api.post('/api/reviews', requestBody);
 
       console.log('Review submitted successfully:', data);
       Alert.alert('Success', 'Review submitted!');
       
-      // Reset form
       setRating(0);
       setReviewText('');
       onClose();
       
-      // Refresh reviews list
       onReviewSubmitted?.();
     } catch (error) {
       console.error('Submit review error:', error);
@@ -151,7 +256,6 @@ export default function MediaActionsModal({ visible, onClose, mediaId, onReviewS
   };
 
   const handleClose = () => {
-    // Reset review form when closing
     setRating(0);
     setReviewText('');
     setActiveTab('review');
@@ -177,10 +281,82 @@ export default function MediaActionsModal({ visible, onClose, mediaId, onReviewS
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          {/* Close button */}
           <TouchableOpacity style={styles.closeIcon} onPress={handleClose}>
             <Ionicons name="close" size={28} color="#666" />
           </TouchableOpacity>
+
+          {/* ✅ NEW: Quick Actions Row */}
+          <View style={styles.quickActionsContainer}>
+            <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+            <View style={styles.quickActionsRow}>
+              {/* Like Button */}
+              <TouchableOpacity
+                style={[styles.quickActionButton, isLiked && styles.quickActionActive]}
+                onPress={handleLikeToggle}
+                disabled={quickActionLoading}
+              >
+                {quickActionLoading ? (
+                  <ActivityIndicator size="small" color={isLiked ? '#fff' : '#4c00b4'} />
+                ) : (
+                  <Ionicons
+                    name={isLiked ? 'heart' : 'heart-outline'}
+                    size={24}
+                    color={isLiked ? '#fff' : '#4c00b4'}
+                  />
+                )}
+              </TouchableOpacity>
+
+              {/* Reading Button */}
+              <TouchableOpacity
+                style={[
+                  styles.quickActionButton,
+                  readingStatus === 'reading' && styles.quickActionActive,
+                ]}
+                onPress={handleReadingToggle}
+                disabled={quickActionLoading}
+              >
+                {quickActionLoading ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={readingStatus === 'reading' ? '#fff' : '#4c00b4'}
+                  />
+                ) : (
+                  <Ionicons
+                    name={readingStatus === 'reading' ? 'book' : 'book-outline'}
+                    size={24}
+                    color={readingStatus === 'reading' ? '#fff' : '#4c00b4'}
+                  />
+                )}
+              </TouchableOpacity>
+
+              {/* Completed Button */}
+              <TouchableOpacity
+                style={[
+                  styles.quickActionButton,
+                  readingStatus === 'completed' && styles.quickActionActive,
+                ]}
+                onPress={handleCompletedToggle}
+                disabled={quickActionLoading}
+              >
+                {quickActionLoading ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={readingStatus === 'completed' ? '#fff' : '#4c00b4'}
+                  />
+                ) : (
+                  <Ionicons
+                    name={
+                      readingStatus === 'completed'
+                        ? 'checkmark-circle'
+                        : 'checkmark-circle-outline'
+                    }
+                    size={24}
+                    color={readingStatus === 'completed' ? '#fff' : '#4c00b4'}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* Tab Selector */}
           <View style={styles.tabContainer}>
@@ -329,19 +505,55 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '90%',
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    height: '85%',
   },
   closeIcon: {
     position: 'absolute',
-    top: 20,
-    right: 20,
+    top: 12,
+    right: 12,
     zIndex: 10,
-    padding: 4,
+    padding: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 20,
+  },
+  // ✅ NEW: Quick Actions Styles
+  quickActionsContainer: {
+    marginTop: 40,
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  quickActionsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickActionButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4c00b4',
+  },
+  quickActionActive: {
+    backgroundColor: '#4c00b4',
+    borderColor: '#4c00b4',
   },
   tabContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
@@ -371,7 +583,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   label: {
     fontSize: 16,
@@ -382,12 +594,12 @@ const styles = StyleSheet.create({
   ratingButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   ratingButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
@@ -399,7 +611,7 @@ const styles = StyleSheet.create({
     borderColor: '#4c00b4',
   },
   ratingText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#666',
   },
@@ -410,25 +622,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     fontSize: 15,
-    minHeight: 150,
+    minHeight: 120,
+    maxHeight: 200,
     backgroundColor: '#fafafa',
   },
   charCount: {
     fontSize: 12,
     color: '#999',
-    marginTop: 8,
+    marginTop: 6,
     textAlign: 'right',
   },
   submitButton: {
     backgroundColor: '#4c00b4',
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    marginTop: 16,
   },
   submitButtonDisabled: {
     opacity: 0.6,
@@ -446,7 +660,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyContainer: {
-    paddingVertical: 60,
+    paddingVertical: 40,
     alignItems: 'center',
   },
   emptyText: {
@@ -460,14 +674,15 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 8,
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
   folderItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 14,
     backgroundColor: '#fafafa',
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   folderIcon: {
     marginRight: 12,
@@ -498,10 +713,9 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   title: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 8,
-    textAlign: 'right',
-
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#222',
+    marginBottom: 8,
   }
 });

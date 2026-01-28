@@ -50,7 +50,7 @@ export default function ProfileReviews() {
 
     setLoading(true);
     try {
-      const reviewsData = await api.get<Review[]>(`/api/reviews/user/${user.id}`);
+      const reviewsData = await api.get<Review[]>(`/api/reviews/me`);
       console.log('User reviews:', reviewsData);
       setReviews(reviewsData);
     } catch (error) {

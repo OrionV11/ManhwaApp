@@ -36,8 +36,8 @@ export default function ProfileReadList({ label }: Props) {
     setLoading(true);
     try {
       const endpoint = status === 'completed' 
-        ? `/api/reading-progress/completed/${user.id}`
-        : `/api/reading-progress/${user.id}`;
+        ? `/api/reading-progress/completed/me`
+        : `/api/reading-progress/me`;
       
       const data = await api.get<Media[]>(endpoint);
       setList(data);

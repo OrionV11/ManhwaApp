@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from pydantic import BaseModel, Field
 from database import get_db
+from models import User, Review, Media 
+from auth import get_current_user
 from controllers import userreview as user_reviews
 from dependencies import get_current_user_id
 
@@ -21,7 +23,7 @@ class ReviewCreate(BaseModel):
     rating: int
     title: Optional[str] = ""
 
-@router.post("/api/reviews")
+@router.post("")
 async def create_review(
     review_data: ReviewCreate,  # Use Pydantic model instead of dict
     current_user: User = Depends(get_current_user),
@@ -76,7 +78,7 @@ async def create_review(
         } if media else None
     }
 
-@router.get("/api/reviews/me")  # ✅ Correct endpoint
+@router.get("/me")  
 async def get_my_reviews(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -109,7 +111,7 @@ async def get_my_reviews(
     
     return result
 
-@router.delete("/api/reviews/{review_id}")
+@router.delete("/{review_id}")
 async def delete_review(
     review_id: int,
     current_user: User = Depends(get_current_user),
@@ -137,7 +139,7 @@ async def delete_review(
     
     return {"message": "Review deleted successfully"}
 
-@router.put("/api/reviews/{review_id}")
+@router.put("/{review_id}")
 async def update_review(
     review_id: int,
     review_data: ReviewCreate,
@@ -238,3 +240,54 @@ def check_user_liked_review(
         review_id=review_id
     )
     return {"has_liked": has_liked}
+
+# backend/routes/reviews.py
+
+@router.get("/public")
+def get_public_reviews(
+    sort: str = "popular",  # popular, recent, rating
+    limit: int = 50,
+    db: Session = Depends(get_db)
+):
+    """Get public reviews sorted by popularity"""
+    
+    query = db.query(Review)
+    
+    # Sort by different criteria
+    if sort == "popular":
+        query = query.order_by(Review.likes_count.desc())
+    elif sort == "recent":
+        query = query.order_by(Review.created_at.desc())
+    elif sort == "rating":
+        query = query.order_by(Review.rating.desc())
+    
+    reviews = query.limit(limit).all()
+    
+    result = []
+    for review in reviews:
+        user = db.query(User).filter(User.id == review.user_id).first()
+        media = db.query(Media).filter(Media.id == review.media_id).first()
+        
+        if user and media:
+            result.append({
+                "id": review.id,
+                "rating": float(review.rating) if review.rating else None,
+                "title": review.title,
+                "content": review.content,
+                "likes_count": review.likes_count or 0,
+                "created_at": review.created_at.isoformat(),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "profile_picture": user.profile_picture,
+                },
+                "media": {
+                    "id": media.id,
+                    "title_english": media.title_english,
+                    "title_romaji": media.title_romaji,
+                    "cover_image": media.cover_image,
+                    "type": media.type,
+                },
+            })
+    
+    return result

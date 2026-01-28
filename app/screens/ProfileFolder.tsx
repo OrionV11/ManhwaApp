@@ -52,7 +52,7 @@ export default function ProfileList() {
 
     setLoading(true);
     try {
-      const data = await api.get<Folder[]>(`/api/folders?user_id=${user.id}`);
+      const data = await api.get<Folder[]>(`/api/folders/me`);
       setFolders(data);
     } catch (error) {
       console.error('Error fetching folders:', error);
@@ -80,12 +80,12 @@ export default function ProfileList() {
     setLoading(true);
     try {
       await api.post('/api/folders', {
-        user_id: user.id,
-        title: newFolderTitle.trim(),
-        description: newFolderDescription.trim() || null,
-        is_public: isPublic,
-      });
-
+      user_id: user.id,
+      title: newFolderTitle.trim(),
+      description: newFolderDescription.trim() || null,
+      is_public: isPublic,
+    },
+);
       Alert.alert('Success', 'Folder created!');
       
       // Reset form
@@ -140,7 +140,6 @@ export default function ProfileList() {
     router.push(`/folders/${folderId}`);
   };
 
-  // Show login prompt if not authenticated
   if (!isAuthenticated || !user) {
     return (
       <View style={styles.centerContainer}>
@@ -157,7 +156,7 @@ export default function ProfileList() {
         </TouchableOpacity>
       </View>
     );
-  }
+  } 
 
   if (loading && folders.length === 0) {
     return (

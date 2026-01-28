@@ -11,6 +11,9 @@ import {
     View
 } from 'react-native';
 
+const API_BASE_URL = 'http://192.168.1.135:3000';
+
+
 export default function ChangePassword() {
     // Input fields
     const [currentPassword, setCurrentPassword] = useState('');
@@ -83,7 +86,7 @@ export default function ChangePassword() {
 
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3000/api/users/${userId}/password`, {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/password`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -34,7 +34,7 @@ export default function ProfileReadLikes({ label }: Props) {
 
     setLoading(true);
     try {
-      const data = await api.get<Media[]>(`/api/likes/user/${user.id}`);
+      const data = await api.get<Media[]>(`/api/favorites/me`);
       setList(data);
     } catch (error) {
       console.error('Error fetching likes:', error);

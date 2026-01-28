@@ -1,24 +1,27 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+# backend/routes/auth.py
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
-from typing import Dict
 from passlib.context import CryptContext
-from jose import jwt
 from datetime import datetime, timedelta
+from jose import jwt
+import os
+from dotenv import load_dotenv
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+from database import get_db
+from models import User
 
-# In-memory "database"
-users_db: Dict[str, dict] = {}
+load_dotenv()
 
-# Password hashing
+router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT settings
-SECRET_KEY = "supersecretkey"
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+ACCESS_TOKEN_EXPIRE_DAYS = 7
 
-# Schemas
+# Request/Response Models
 class SignupRequest(BaseModel):
     username: str
     email: EmailStr
@@ -31,60 +34,123 @@ class LoginRequest(BaseModel):
 class UserResponse(BaseModel):
     id: int
     username: str
-    email: EmailStr
+    email: str
+    bio: str | None = None
+    profile_picture: str | None = None
+    created_at: str
+    updated_at: str
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
 
-# Helpers
+# Helper Functions
 def hash_password(password: str) -> str:
-    truncated_pw = password.encode("utf-8")[:72].decode("utf-8", "ignore")
     return pwd_context.hash(password)
 
-def verify_password(password: str, hashed: str) -> bool:
-    return pwd_context.verify(password, hashed)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
-def create_token(user_id: int) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "exp": expire}
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+def create_access_token(user_id: int) -> str:
+    expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    to_encode = {
+        "sub": str(user_id),
+        "exp": expire,
+        "iat": datetime.utcnow()
+    }
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 # Routes
-@router.post("/signup", response_model=TokenResponse)
-def signup(data: SignupRequest):
-    if data.email in users_db:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    user_id = len(users_db) + 1
-    hashed_pw = hash_password(data.password)
-    users_db[data.email] = {
-        "id": user_id,
-        "username": data.username,
-        "email": data.email,
-        "password_hash": hashed_pw
-    }
-    token = create_token(user_id)
+@router.post("/auth/signup", response_model=TokenResponse)
+def signup(data: SignupRequest, db: Session = Depends(get_db)):
+    """Sign up a new user"""
+    
+    # Check if email already exists
+    existing_email = db.query(User).filter(User.email == data.email).first()
+    if existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    # Check if username already exists
+    existing_username = db.query(User).filter(User.username == data.username).first()
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already taken"
+        )
+    
+    # Create new user
+    hashed_password = hash_password(data.password)
+    new_user = User(
+        username=data.username,
+        email=data.email,
+        hashed_password=hashed_password,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)  # Get the auto-generated ID
+    
+    # Create access token
+    token = create_access_token(new_user.id)
+    
     return {
         "access_token": token,
+        "token_type": "bearer",
         "user": {
-            "id": user_id,
-            "username": data.username,
-            "email": data.email
+            "id": new_user.id,
+            "username": new_user.username,
+            "email": new_user.email,
+            "bio": new_user.bio,
+            "profile_picture": new_user.profile_picture,
+            "created_at": new_user.created_at.isoformat(),
+            "updated_at": new_user.updated_at.isoformat()
         }
     }
 
-@router.post("/login", response_model=TokenResponse)
-def login(data: LoginRequest):
-    user = users_db.get(data.email)
-    if not user or not verify_password(data.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_token(user["id"])
+@router.post("/auth/login", response_model=TokenResponse)
+def login(data: LoginRequest, db: Session = Depends(get_db)):
+    """Log in an existing user"""
+    
+    # Find user by email
+    user = db.query(User).filter(User.email == data.email).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+    
+    # Verify password
+    if not verify_password(data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+    
+    # Create access token
+    token = create_access_token(user.id)
+    
     return {
         "access_token": token,
+        "token_type": "bearer",
         "user": {
-            "id": user["id"],
-            "username": user["username"],
-            "email": user["email"]
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "bio": user.bio,
+            "profile_picture": user.profile_picture,
+            "created_at": user.created_at.isoformat(),
+            "updated_at": user.updated_at.isoformat()
         }
     }
+
+@router.post("/auth/logout")
+def logout():
+    """Logout endpoint (token invalidation should be handled client-side)"""
+    return {"message": "Logged out successfully"}

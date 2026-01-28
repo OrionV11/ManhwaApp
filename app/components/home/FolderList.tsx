@@ -1,9 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -12,11 +13,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-
-const mockUser = {
-  id: 1,
-  username: 'TestUser',
-};
+import { useAuth } from '../../contexts/AuthContext';
+import { api, ApiError } from '../../utils/api';
 
 interface Folder {
   id: number;
@@ -28,13 +26,24 @@ interface Folder {
   item_count: number;
   created_at: string;
   updated_at?: string;
+  user?: {
+    id: number;
+    username: string;
+    profile_picture?: string;
+  };
+  preview_images?: string[];
 }
+
+type TabType = 'my_folders' | 'popular';
 
 export default function FoldersList() {
   const router = useRouter();
-  const [folders, setFolders] = useState<Folder[]>([]);
+  const { user, isAuthenticated } = useAuth();
+  
+  const [activeTab, setActiveTab] = useState<TabType>('popular');
+  const [myFolders, setMyFolders] = useState<Folder[]>([]);
+  const [popularFolders, setPopularFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState<number>(1);
   
   // Create folder modal state
   const [modalVisible, setModalVisible] = useState(false);
@@ -42,39 +51,43 @@ export default function FoldersList() {
   const [newFolderDescription, setNewFolderDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
 
-  // Mock setup
   useEffect(() => {
-    const seedMockUser = async () => {
-      const existingUser = await AsyncStorage.getItem('user');
-      if (!existingUser) {
-        await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-        await AsyncStorage.setItem('userId', String(mockUser.id));
-      }
-    };
-    seedMockUser();
-  }, []);
-
-  // Fetch folders on mount
-  useEffect(() => {
-    if (userId) {
-      fetchFolders();
+    fetchPopularFolders();
+    if (user?.id) {
+      fetchMyFolders();
     }
-  }, [userId]);
+  }, [user?.id]);
 
-  const fetchFolders = async () => {
+  const fetchMyFolders = async () => {
+    if (!user?.id) return;
+
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3000/api/folders?user_id=${userId}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch folders');
-      }
-      
-      const data = await response.json();
-      setFolders(data);
+      const data = await api.get<Folder[]>(`/api/folders/me`);
+      setMyFolders(data);
     } catch (error) {
-      console.error('Error fetching folders:', error);
-      Alert.alert('Error', 'Failed to load folders');
+      console.error('Error fetching my folders:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPopularFolders = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<Folder[]>(
+        `/api/folders/public?sort=popular&limit=50`,
+        false  // Public endpoint
+      );
+      setPopularFolders(data);
+    } catch (error) {
+      console.error('Error fetching popular folders:', error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -86,36 +99,35 @@ export default function FoldersList() {
       return;
     }
 
+    if (!user?.id) {
+      Alert.alert('Error', 'Please log in to create folders');
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/api/folders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          title: newFolderTitle.trim(),
-          description: newFolderDescription.trim() || null,
-          is_public: isPublic,
-        }),
+      await api.post('/api/folders', {
+        title: newFolderTitle.trim(),
+        description: newFolderDescription.trim() || null,
+        is_public: isPublic,
       });
 
-      if (response.ok) {
-        Alert.alert('Success', 'Folder created!');
-        setNewFolderTitle('');
-        setNewFolderDescription('');
-        setIsPublic(false);
-        setModalVisible(false);
-        fetchFolders(); // Refresh list
-        console.log('Folder Created')
-      } else {
-        const data = await response.json();
-        Alert.alert('Error', data.detail || 'Failed to create folder');
+      Alert.alert('Success', 'Folder created!');
+      
+      setNewFolderTitle('');
+      setNewFolderDescription('');
+      setIsPublic(false);
+      setModalVisible(false);
+      
+      await fetchMyFolders();
+      if (isPublic) {
+        await fetchPopularFolders();
       }
     } catch (error) {
       console.error('Error creating folder:', error);
-      Alert.alert('Error', 'Network error occurred');
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -124,7 +136,7 @@ export default function FoldersList() {
   const handleDeleteFolder = async (folderId: number, folderTitle: string) => {
     Alert.alert(
       'Delete Folder',
-      `Are you sure you want to delete "${folderTitle}"? All items will be removed.`,
+      `Are you sure you want to delete "${folderTitle}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -132,20 +144,15 @@ export default function FoldersList() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await fetch(
-                `http://localhost:3000/api/folders/${folderId}?user_id=${userId}`,
-                { method: 'DELETE' }
-              );
-
-              if (response.ok) {
-                Alert.alert('Success', 'Folder deleted');
-                fetchFolders(); // Refresh list
-              } else {
-                Alert.alert('Error', 'Failed to delete folder');
-              }
+              await api.delete(`/api/folders/${folderId}`);
+              Alert.alert('Success', 'Folder deleted');
+              await fetchMyFolders();
+              await fetchPopularFolders();
             } catch (error) {
-              console.error(error);
-              Alert.alert('Error', 'Network error occurred');
+              console.error('Error deleting folder:', error);
+              if (error instanceof ApiError) {
+                Alert.alert('Error', error.message);
+              }
             }
           }
         }
@@ -153,100 +160,192 @@ export default function FoldersList() {
     );
   };
 
-  const handleOpenFolder = (folderId: number) => {
-    router.push(`/folders/${folderId}`);
+  const handleOpenFolder = (folderId: number, isOwn: boolean) => {
+    if (isOwn) {
+      router.push(`/folders/${folderId}`);
+    } else {
+      router.push(`/user/${folderId}/folder/${folderId}`);
+    }
   };
 
-  if (loading && folders.length === 0) {
+  const handleUserClick = (userId: number) => {
+    router.push(`/user/${userId}`);
+  };
+
+  const renderFolder = (folder: Folder, isOwn: boolean) => (
+    <TouchableOpacity
+      key={folder.id}
+      style={styles.folderCard}
+      onPress={() => handleOpenFolder(folder.id, isOwn)}
+      activeOpacity={0.7}
+    >
+      {/* User Info (for popular folders) */}
+      {!isOwn && folder.user && (
+        <TouchableOpacity
+          style={styles.userSection}
+          onPress={() => handleUserClick(folder.user!.id)}
+        >
+          {folder.user.profile_picture ? (
+            <Image
+              source={{ uri: folder.user.profile_picture }}
+              style={styles.userAvatar}
+            />
+          ) : (
+            <View style={styles.userAvatarPlaceholder}>
+              <Ionicons name="person" size={16} color="#999" />
+            </View>
+          )}
+          <Text style={styles.username}>{folder.user.username}</Text>
+        </TouchableOpacity>
+      )}
+
+      <View style={styles.folderHeader}>
+        <View style={styles.folderIconContainer}>
+          <Ionicons 
+            name={folder.is_public ? "folder-open" : "folder"} 
+            size={40} 
+            color="#4c00b4" 
+          />
+        </View>
+        <View style={styles.folderInfo}>
+          <View style={styles.folderTitleRow}>
+            <Text style={styles.folderTitle} numberOfLines={1}>
+              {folder.title}
+            </Text>
+            {folder.is_public && (
+              <View style={styles.publicBadge}>
+                <Ionicons name="globe-outline" size={10} color="#4c00b4" />
+                <Text style={styles.publicBadgeText}>Public</Text>
+              </View>
+            )}
+          </View>
+          {folder.description && (
+            <Text style={styles.folderDescription} numberOfLines={2}>
+              {folder.description}
+            </Text>
+          )}
+          <View style={styles.folderStats}>
+            <View style={styles.statItem}>
+              <Ionicons name="albums-outline" size={14} color="#999" />
+              <Text style={styles.folderStat}>
+                {folder.item_count} {folder.item_count === 1 ? 'item' : 'items'}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons name="heart-outline" size={14} color="#999" />
+              <Text style={styles.folderStat}>
+                {folder.likes_count} {folder.likes_count === 1 ? 'like' : 'likes'}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Preview Images */}
+      {folder.preview_images && folder.preview_images.length > 0 && (
+        <View style={styles.previewContainer}>
+          {folder.preview_images.slice(0, 4).map((img, index) => (
+            <Image
+              key={index}
+              source={{ uri: img }}
+              style={styles.previewImage}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Action Buttons (only for own folders) */}
+      {isOwn && (
+        <View style={styles.folderActions}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleDeleteFolder(folder.id, folder.title);
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="trash-outline" size={16} color="#dc2626" />
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
+  if (loading && popularFolders.length === 0 && myFolders.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color="#4c00b4" />
+        <Text style={styles.loadingText}>Loading folders...</Text>
       </View>
     );
   }
 
+  const currentFolders = activeTab === 'my_folders' ? myFolders : popularFolders;
+  const isOwnTab = activeTab === 'my_folders';
+
   return (
     <View style={styles.container}>
-      {/* Header with Create Button */}
+      {/* Header with Tabs */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>My Folders</Text>
-          <Text style={styles.headerSubtitle}>{folders.length} folders</Text>
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'popular' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('popular')}
+          >
+            <Text style={[styles.tabText, activeTab === 'popular' && styles.tabTextActive]}>
+              Popular
+            </Text>
+          </TouchableOpacity>
+          
+          {isAuthenticated && (
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'my_folders' && styles.tabButtonActive]}
+              onPress={() => setActiveTab('my_folders')}
+            >
+              <Text style={[styles.tabText, activeTab === 'my_folders' && styles.tabTextActive]}>
+                My Folders
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={() => setModalVisible(true)}
-        >
-          <Text style={styles.createButtonText}>+ New</Text>
-        </TouchableOpacity>
+
+        {activeTab === 'my_folders' && (
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => setModalVisible(true)}
+          >
+            <Ionicons name="add" size={20} color="#fff" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Folders List */}
       <ScrollView style={styles.scrollView}>
-        {folders.length === 0 ? (
+        {currentFolders.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📁</Text>
-            <Text style={styles.emptyText}>No folders yet</Text>
-            <Text style={styles.emptySubtext}>
-              Create a folder to organize your favorite anime and manga
+            <Ionicons name="folder-open-outline" size={80} color="#ccc" />
+            <Text style={styles.emptyText}>
+              {isOwnTab ? 'No folders yet' : 'No popular folders'}
             </Text>
-            <TouchableOpacity
-              style={styles.emptyButton}
-              onPress={() => setModalVisible(true)}
-            >
-              <Text style={styles.emptyButtonText}>Create Your First Folder</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptySubtext}>
+              {isOwnTab 
+                ? 'Create a folder to organize your favorites'
+                : 'Be the first to create a popular folder!'
+              }
+            </Text>
+            {isOwnTab && (
+              <TouchableOpacity
+                style={styles.emptyButton}
+                onPress={() => setModalVisible(true)}
+              >
+                <Text style={styles.emptyButtonText}>Create Your First Folder</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
-          folders.map((folder) => (
-            <TouchableOpacity
-              key={folder.id}
-              style={styles.folderCard}
-              onPress={() => handleOpenFolder(folder.id)}
-            >
-              <View style={styles.folderHeader}>
-                <View style={styles.folderIconContainer}>
-                  <Text style={styles.folderIcon}>📁</Text>
-                </View>
-                <View style={styles.folderInfo}>
-                  <View style={styles.folderTitleRow}>
-                    <Text style={styles.folderTitle}>{folder.title}</Text>
-                    {folder.is_public && (
-                      <View style={styles.publicBadge}>
-                        <Text style={styles.publicBadgeText}>Public</Text>
-                      </View>
-                    )}
-                  </View>
-                  {folder.description && (
-                    <Text style={styles.folderDescription} numberOfLines={2}>
-                      {folder.description}
-                    </Text>
-                  )}
-                  <View style={styles.folderStats}>
-                    <Text style={styles.folderStat}>
-                      📚 {folder.item_count} {folder.item_count === 1 ? 'item' : 'items'}
-                    </Text>
-                    <Text style={styles.folderStat}>
-                      ❤️ {folder.likes_count} {folder.likes_count === 1 ? 'like' : 'likes'}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Action Buttons */}
-              <View style={styles.folderActions}>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleDeleteFolder(folder.id, folder.title);
-                  }}
-                >
-                  <Text style={styles.deleteButtonText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))
+          currentFolders.map((folder) => renderFolder(folder, isOwnTab))
         )}
       </ScrollView>
 
@@ -259,7 +358,19 @@ export default function FoldersList() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Folder</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create New Folder</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setModalVisible(false);
+                  setNewFolderTitle('');
+                  setNewFolderDescription('');
+                  setIsPublic(false);
+                }}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.label}>Title *</Text>
             <TextInput
@@ -268,26 +379,36 @@ export default function FoldersList() {
               value={newFolderTitle}
               onChangeText={setNewFolderTitle}
               maxLength={255}
+              editable={!loading}
             />
 
             <Text style={styles.label}>Description (Optional)</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="Add a description for this folder..."
+              placeholder="Add a description..."
               value={newFolderDescription}
               onChangeText={setNewFolderDescription}
               multiline
               numberOfLines={3}
+              textAlignVertical="top"
+              editable={!loading}
             />
 
             <TouchableOpacity
               style={styles.checkboxContainer}
               onPress={() => setIsPublic(!isPublic)}
+              disabled={loading}
+              activeOpacity={0.7}
             >
               <View style={[styles.checkbox, isPublic && styles.checkboxChecked]}>
-                {isPublic && <Text style={styles.checkmark}>✓</Text>}
+                {isPublic && <Ionicons name="checkmark" size={18} color="#fff" />}
               </View>
-              <Text style={styles.checkboxLabel}>Make this folder public</Text>
+              <View style={styles.checkboxLabelContainer}>
+                <Text style={styles.checkboxLabel}>Make this folder public</Text>
+                <Text style={styles.checkboxSubtext}>
+                  Others will be able to view this folder
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <View style={styles.modalButtons}>
@@ -299,6 +420,7 @@ export default function FoldersList() {
                   setNewFolderDescription('');
                   setIsPublic(false);
                 }}
+                disabled={loading}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -314,7 +436,10 @@ export default function FoldersList() {
                 {loading ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Create</Text>
+                  <>
+                    <Ionicons name="add-circle" size={20} color="#fff" />
+                    <Text style={styles.submitButtonText}>Create</Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
@@ -334,36 +459,52 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#f0f0f0',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#222',
+  tabsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    flex: 1,
   },
-  headerSubtitle: {
+  tabButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+  },
+  tabButtonActive: {
+    backgroundColor: '#4c00b4',
+  },
+  tabText: {
     fontSize: 14,
+    fontWeight: '600',
     color: '#666',
-    marginTop: 4,
+  },
+  tabTextActive: {
+    color: '#fff',
   },
   createButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    backgroundColor: '#4c00b4',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,
@@ -373,14 +514,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 60,
   },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
   emptyText: {
     fontSize: 20,
     fontWeight: '600',
     color: '#222',
+    marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
@@ -388,9 +526,10 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginBottom: 24,
+    paddingHorizontal: 20,
   },
   emptyButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#4c00b4',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -412,15 +551,41 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  userSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  userAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  userAvatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  username: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#222',
+  },
   folderHeader: {
     flexDirection: 'row',
     marginBottom: 12,
   },
   folderIconContainer: {
     marginRight: 12,
-  },
-  folderIcon: {
-    fontSize: 40,
+    justifyContent: 'center',
   },
   folderInfo: {
     flex: 1,
@@ -438,28 +603,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   publicBadge: {
-    backgroundColor: '#dbeafe',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ede9fe',
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   publicBadgeText: {
     fontSize: 10,
-    color: '#3b82f6',
+    color: '#4c00b4',
     fontWeight: '600',
   },
   folderDescription: {
     fontSize: 14,
     color: '#666',
     marginBottom: 8,
+    lineHeight: 20,
   },
   folderStats: {
     flexDirection: 'row',
     gap: 16,
   },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   folderStat: {
     fontSize: 12,
     color: '#999',
+  },
+  previewContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  previewImage: {
+    width: 60,
+    height: 90,
+    borderRadius: 6,
   },
   folderActions: {
     flexDirection: 'row',
@@ -469,32 +653,40 @@ const styles = StyleSheet.create({
     borderTopColor: '#e5e7eb',
   },
   deleteButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 6,
     backgroundColor: '#fee2e2',
   },
   deleteButtonText: {
     color: '#dc2626',
     fontWeight: '600',
+    fontSize: 14,
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 24,
-    width: '90%',
-    maxWidth: 400,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
     color: '#222',
   },
   label: {
@@ -514,11 +706,10 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 80,
-    textAlignVertical: 'top',
   },
   checkboxContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginTop: 16,
   },
   checkbox: {
@@ -526,23 +717,27 @@ const styles = StyleSheet.create({
     height: 24,
     borderWidth: 2,
     borderColor: '#d1d5db',
-    borderRadius: 4,
-    marginRight: 8,
+    borderRadius: 6,
+    marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
+    backgroundColor: '#4c00b4',
+    borderColor: '#4c00b4',
   },
-  checkmark: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  checkboxLabelContainer: {
+    flex: 1,
   },
   checkboxLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#222',
+    fontWeight: '500',
+  },
+  checkboxSubtext: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -551,7 +746,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#d1d5db',
@@ -564,10 +759,13 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 1,
-    backgroundColor: '#3b82f6',
-    paddingVertical: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#4c00b4',
+    paddingVertical: 14,
+    borderRadius: 8,
   },
   submitButtonDisabled: {
     backgroundColor: '#9ca3af',

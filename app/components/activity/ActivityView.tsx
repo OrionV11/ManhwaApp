@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { User } from '../../services/Manhwa';
+import { api, ApiError } from '../../utils/api';
 import ActivityList from './ActivityList';
-
-const API_BASE_URL = 'http://localhost:3000';
 
 type Activity = {
   activity_id: number;
@@ -29,52 +28,51 @@ type Props = {
 };
 
 export default function ActivityView({ user }: Props) {
-  const [reviews, setReviews] = useState([]);
-  const [favorites, setFavorites] = useState([]);
-  const [tab, setTab] = useState<'You' | 'Friends' | 'Global'>('You');
+  const [tab, setTab] = useState<'You' | 'Friends'>('You');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Single useEffect that handles all tabs
+
+
+
+  // Fetch activities when tab changes
   useEffect(() => {
-    const fetchTabData = async () => {
-      setLoading(true);
+    fetchTabData();
+  }, [tab]);
 
-      try {
-        if (tab === 'You') {
-          // Fetch both reviews and favorites for "You" tab
-          const [reviewRes, favoritesRes] = await Promise.all([
-            fetch(`${API_BASE_URL}/api/reviews/user/${user.id}`),
-            fetch(`${API_BASE_URL}/api/favorites/${user.id}`)
-          ]);
+  const fetchTabData = async () => {
+    setLoading(true);
 
-          const reviewsData = await reviewRes.json();
-          const favoritesData = await favoritesRes.json();
+    try {
+      if (tab === 'You') {
+        // Fetch user's own activities (reviews and favorites)
+        const [reviewsData, favoritesData] = await Promise.all([
+          api.get(`/api/reviews/me`),  
+          api.get(`/api/favorites/me`)  
+        ]);
 
-          setReviews(reviewsData);
-          setFavorites(favoritesData);
-
-          const formattedActivities: Activity[] = [
+        // Format activities from reviews and favorites
+        const formattedActivities: Activity[] = [
           ...reviewsData.map((review: any) => ({
-            activity_id: review.id,
+            activity_id: `review-${review.review_id || review.id}`,
             activity_type: 'review',
             details: review.content,
             created_at: review.created_at,
-            media: {
-              id: review.media_id,
+            media: review.media ? {
+              id: review.media.id,
               title_romaji: review.media.title_romaji,
               title_english: review.media.title_english,
               cover_image: review.media.cover_image,
               type: review.media.type || 'ANIME'
-            },
+            } : null,
             user: {
               id: user.id,
               username: user.username,
-              profile_picture: user.profile_picture
+              profile_picture: user.profile_picture || undefined
             }
           })),
           ...favoritesData.map((fav: any) => ({
-            activity_id: fav.id,
+            activity_id: `favorite-${fav.id}`,
             activity_type: 'favorite',
             created_at: fav.created_at || new Date().toISOString(),
             media: {
@@ -87,34 +85,35 @@ export default function ActivityView({ user }: Props) {
             user: {
               id: user.id,
               username: user.username,
-              profile_picture: user.profile_picture
+              profile_picture: user.profile_picture || undefined
             }
           }))
         ];
 
+        // Sort by created_at (newest first)
+        formattedActivities.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
         setActivities(formattedActivities);
           
-          // Combine into activities format if needed
-          // Or set activities separately based on your ActivityList component
-          
-        } else if (tab === 'Friends') {
-          const res = await fetch(`${API_BASE_URL}/api/activity/feed?user_id=${user.id}`);
-          if (res.ok) {
-            const data = await res.json();
-            setActivities(data);
-          }
-          
-        }
-
-      } catch (error) {
-        console.error(`Error fetching ${tab} data:`, error);
-      } finally {
-        setLoading(false);
+      } else if (tab === 'Friends') {
+        // Fetch friends' activities from feed endpoint
+        const data = await api.get<Activity[]>(`/api/activity/feed`);  // ✅ No user_id needed
+        setActivities(data);
       }
-    };
 
-    fetchTabData();
-  }, [tab, user.id]); // Refetch when tab or user.id changes
+    } catch (error) {
+      console.error(`Error fetching ${tab} data:`, error);
+      if (error instanceof ApiError) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', `Failed to load ${tab} activities`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -123,7 +122,7 @@ export default function ActivityView({ user }: Props) {
         {['You', 'Friends'].map(t => (
           <TouchableOpacity
             key={t}
-            onPress={() => setTab(t as 'You' | 'Friends' | 'Global')}
+            onPress={() => setTab(t as 'You' | 'Friends')}
             style={[styles.tab, tab === t && styles.tabActive]}
           >
             <Text style={tab === t ? styles.tabTextActive : styles.tabText}>
@@ -135,7 +134,11 @@ export default function ActivityView({ user }: Props) {
 
       {/* Content */}
       <ScrollView style={styles.scrollView}>
-        <ActivityList activities={activities} loading={loading} currentUserId={user.id} />
+        <ActivityList 
+          activities={activities} 
+          loading={loading} 
+          currentUserId={user.id} 
+        />
       </ScrollView>
     </View>
   );
@@ -143,7 +146,9 @@ export default function ActivityView({ user }: Props) {
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: 50,
     flex: 1,
+    backgroundColor: '#f9fafb',
   },
   tabs: { 
     flexDirection: 'row', 
@@ -161,11 +166,14 @@ const styles = StyleSheet.create({
     borderColor: '#4c00b4' 
   },
   tabText: { 
-    color: '#999' 
+    color: '#999',
+    fontSize: 14,
+    fontWeight: '500'
   },
   tabTextActive: { 
     color: '#4c00b4', 
-    fontWeight: '600' 
+    fontWeight: '700',
+    fontSize: 14
   },
   scrollView: {
     flex: 1,

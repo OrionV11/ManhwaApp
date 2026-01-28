@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://192.168.1.135:3000';  
 
 interface User {
   id: number;
@@ -111,30 +111,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const logout = async () => {
+  // contexts/AuthContext.tsx
+
+const logout = async () => {
+    console.log('🔵 AuthContext logout() called');
     try {
-      // Optional: Call backend logout endpoint if you have one
-      if (token) {
-        await fetch(`${API_BASE_URL}/api/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }).catch(err => console.log('Logout API call failed:', err));
-      }
+        // Optional: Call backend logout endpoint if you have one
+        if (token) {
+            console.log('🔵 Calling backend logout...');
+            await fetch(`${API_BASE_URL}/api/auth/logout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            }).catch(err => console.log('⚠️ Logout API call failed:', err));
+        }
     } catch (error) {
-      console.error('Logout API error:', error);
+        console.error('❌ Logout API error:', error);
     } finally {
-      // Clear local storage regardless of API result
-      await Promise.all([
-        AsyncStorage.removeItem('user'),
-        AsyncStorage.removeItem('authToken'),
-      ]);
-      setUser(null);
-      setToken(null);
+        console.log('🔵 Clearing AsyncStorage...');
+        // Clear local storage regardless of API result
+        await Promise.all([
+            AsyncStorage.removeItem('user'),
+            AsyncStorage.removeItem('authToken'),
+        ]);
+        console.log('🔵 Setting user and token to null...');
+        setUser(null);
+        setToken(null);
+        console.log('✅ Logout complete!');
     }
-  };
+};
 
   const updateProfile = async (data: { 
     username?: string; 

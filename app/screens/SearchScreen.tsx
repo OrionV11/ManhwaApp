@@ -1,3 +1,5 @@
+// screens/SearchScreen.tsx
+
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -12,8 +14,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://192.168.1.135:3000';
 
 interface Media {
   id: number;
@@ -26,6 +30,17 @@ interface Media {
   status: string;
   start_date: string | null;
 }
+
+interface User {
+  id: number;
+  username: string;
+  bio?: string;
+  profile_picture?: string;
+  followers_count?: number;
+  following_count?: number;
+}
+
+type SearchMode = 'media' | 'users';
 
 const DECADES = [
   { label: '2020s', value: '2020s', years: ['2020', '2021', '2022', '2023', '2024', '2025'] },
@@ -57,7 +72,10 @@ const STATUSES = [
 ];
 
 const SearchScreen = () => {
+  const [searchMode, setSearchMode] = useState<SearchMode>('media');
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, isAuthenticated } = useAuth();
+
   const [selectedFilters, setSelectedFilters] = useState({
     types: [] as string[],
     genres: [] as string[],
@@ -74,7 +92,8 @@ const SearchScreen = () => {
 
   const [expandedDecade, setExpandedDecade] = useState<string | null>(null);
   
-  const [results, setResults] = useState<Media[]>([]);
+  const [mediaResults, setMediaResults] = useState<Media[]>([]);
+  const [userResults, setUserResults] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
@@ -115,6 +134,40 @@ const SearchScreen = () => {
            selectedFilters.years.length > 0;
   };
 
+  const switchMode = (mode: SearchMode) => {
+    setSearchMode(mode);
+    setSearchQuery('');
+    setShowResults(false);
+    setMediaResults([]);
+    setUserResults([]);
+    clearAllFilters();
+  };
+
+  // Search users
+  // screens/SearchScreen.tsx
+
+const searchUsers = async (query: string) => {
+  if (!query.trim()) {
+    setUserResults([]);
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const results = await api.get<User[]>(
+      `/api/users/search?q=${encodeURIComponent(query.trim())}`,
+      false  // ✅ Set requiresAuth to false (public endpoint)
+    );
+    setUserResults(results);
+  } catch (error) {
+    console.error('User search error:', error);
+    setUserResults([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // Existing media search function
   const fetchResults = async () => {
     if (!hasActiveFilters()) {
       setShowResults(false);
@@ -177,7 +230,7 @@ const SearchScreen = () => {
           );
         }
 
-        setResults(data);
+        setMediaResults(data);
       } else {
         // No search query - use filter endpoint
         url += '/filtering';
@@ -207,20 +260,23 @@ const SearchScreen = () => {
         }
 
         const data = await response.json();
-        setResults(data);
+        setMediaResults(data);
       }
     } catch (err: any) {
       console.error(err);
-      setResults([]);
+      setMediaResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-
   const handleMediaClick = (mediaId: number) => {
-    router.push(`/media/${mediaId}`)
-  }
+    router.push(`/media/${mediaId}`);
+  };
+
+  const handleUserClick = (userId: number) => {
+    router.push(`/user/${userId}`);
+  };
 
   const renderMediaItem = ({ item }: { item: Media }) => (
     <TouchableOpacity 
@@ -246,7 +302,46 @@ const SearchScreen = () => {
     </TouchableOpacity>
   );
 
-  if (showResults) {
+  const renderUserItem = ({ item }: { item: User }) => (
+    <TouchableOpacity
+      style={styles.userCard}
+      onPress={() => handleUserClick(item.id)}
+    >
+      <View style={styles.userInfo}>
+        {item.profile_picture ? (
+          <Image
+            source={{ uri: item.profile_picture }}
+            style={styles.avatar}
+          />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Ionicons name="person" size={24} color="#999" />
+          </View>
+        )}
+        <View style={styles.userDetails}>
+          <Text style={styles.username}>{item.username}</Text>
+          {item.bio && (
+            <Text style={styles.userBio} numberOfLines={2}>
+              {item.bio}
+            </Text>
+          )}
+          <View style={styles.userStats}>
+            <Text style={styles.statText}>
+              {item.followers_count || 0} followers
+            </Text>
+            <Text style={styles.statDivider}>•</Text>
+            <Text style={styles.statText}>
+              {item.following_count || 0} following
+            </Text>
+          </View>
+        </View>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#999" />
+    </TouchableOpacity>
+  );
+
+  // Media results view
+  if (showResults && searchMode === 'media') {
     return (
       <View style={styles.container}>
         <View style={styles.resultsHeader}>
@@ -254,7 +349,7 @@ const SearchScreen = () => {
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
           <Text style={styles.resultsTitle}>
-            {results.length} {results.length === 1 ? 'Result' : 'Results'}
+            {mediaResults.length} {mediaResults.length === 1 ? 'Result' : 'Results'}
           </Text>
           <TouchableOpacity onPress={clearAllFilters}>
             <Text style={styles.clearText}>Clear</Text>
@@ -265,7 +360,7 @@ const SearchScreen = () => {
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#4c00b4" />
           </View>
-        ) : results.length === 0 ? (
+        ) : mediaResults.length === 0 ? (
           <View style={styles.centerContainer}>
             <Ionicons name="search-outline" size={64} color="#ccc" />
             <Text style={styles.emptyText}>No results found</Text>
@@ -273,7 +368,7 @@ const SearchScreen = () => {
           </View>
         ) : (
           <FlatList
-            data={results}
+            data={mediaResults}
             renderItem={renderMediaItem}
             keyExtractor={(item) => item.id.toString()}
             numColumns={3}
@@ -290,246 +385,319 @@ const SearchScreen = () => {
       {/* Header with Search */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Search</Text>
+
+        {/* Mode Tabs */}
+        <View style={styles.modeTabs}>
+          <TouchableOpacity
+            style={[styles.modeTab, searchMode === 'media' && styles.modeTabActive]}
+            onPress={() => switchMode('media')}
+          >
+            <Ionicons
+              name="film"
+              size={18}
+              color={searchMode === 'media' ? '#4c00b4' : '#999'}
+            />
+            <Text style={[styles.modeTabText, searchMode === 'media' && styles.modeTabTextActive]}>
+              Media
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeTab, searchMode === 'users' && styles.modeTabActive]}
+            onPress={() => switchMode('users')}
+          >
+            <Ionicons
+              name="people"
+              size={18}
+              color={searchMode === 'users' ? '#4c00b4' : '#999'}
+            />
+            <Text style={[styles.modeTabText, searchMode === 'users' && styles.modeTabTextActive]}>
+              Users
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.searchBar}>
           <Ionicons name="search" size={20} color="#999" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search titles..."
+            placeholder={searchMode === 'media' ? 'Search titles...' : 'Search users...'}
             placeholderTextColor="#999"
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (searchMode === 'users') {
+                searchUsers(text);
+              }
+            }}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity onPress={() => {
+              setSearchQuery('');
+              setUserResults([]);
+            }}>
               <Ionicons name="close-circle" size={20} color="#999" />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      <ScrollView style={styles.filtersContainer}>
-        {/* Type Filter */}
-        <View style={styles.filterSection}>
-          <TouchableOpacity
-            style={styles.filterHeader}
-            onPress={() => toggleSection('type')}
-          >
-            <View style={styles.filterHeaderLeft}>
-              <Text style={styles.filterTitle}>Type</Text>
-              {selectedFilters.types.length > 0 && (
-                <View style={styles.filterBadge}>
-                  <Text style={styles.filterBadgeText}>{selectedFilters.types.length}</Text>
-                </View>
-              )}
-            </View>
-            <Ionicons
-              name={expandedSections.type ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color="#666"
-            />
-          </TouchableOpacity>
-
-          {expandedSections.type && (
-            <View style={styles.filterOptions}>
-              {MEDIA_TYPES.map((type) => (
-                <TouchableOpacity
-                  key={type.value}
-                  style={[
-                    styles.filterOption,
-                    selectedFilters.types.includes(type.value) && styles.filterOptionSelected
-                  ]}
-                  onPress={() => toggleFilter('types', type.value)}
-                >
-                  <Text style={[
-                    styles.filterOptionText,
-                    selectedFilters.types.includes(type.value) && styles.filterOptionTextSelected
-                  ]}>
-                    {type.label}
-                  </Text>
-                  {selectedFilters.types.includes(type.value) && (
-                    <Ionicons name="checkmark" size={18} color="#4c00b4" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Genre Filter */}
-        <View style={styles.filterSection}>
-          <TouchableOpacity
-            style={styles.filterHeader}
-            onPress={() => toggleSection('genre')}
-          >
-            <View style={styles.filterHeaderLeft}>
-              <Text style={styles.filterTitle}>Genre</Text>
-              {selectedFilters.genres.length > 0 && (
-                <View style={styles.filterBadge}>
-                  <Text style={styles.filterBadgeText}>{selectedFilters.genres.length}</Text>
-                </View>
-              )}
-            </View>
-            <Ionicons
-              name={expandedSections.genre ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color="#666"
-            />
-          </TouchableOpacity>
-
-          {expandedSections.genre && (
-            <View style={styles.filterOptions}>
-              {GENRES.map((genre) => (
-                <TouchableOpacity
-                  key={genre}
-                  style={[
-                    styles.filterOption,
-                    selectedFilters.genres.includes(genre) && styles.filterOptionSelected
-                  ]}
-                  onPress={() => toggleFilter('genres', genre)}
-                >
-                  <Text style={[
-                    styles.filterOptionText,
-                    selectedFilters.genres.includes(genre) && styles.filterOptionTextSelected
-                  ]}>
-                    {genre}
-                  </Text>
-                  {selectedFilters.genres.includes(genre) && (
-                    <Ionicons name="checkmark" size={18} color="#4c00b4" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Decade/Year Filter */}
-        <View style={styles.filterSection}>
-          <TouchableOpacity
-            style={styles.filterHeader}
-            onPress={() => toggleSection('decade')}
-          >
-            <View style={styles.filterHeaderLeft}>
-              <Text style={styles.filterTitle}>Year</Text>
-              {selectedFilters.years.length > 0 && (
-                <View style={styles.filterBadge}>
-                  <Text style={styles.filterBadgeText}>{selectedFilters.years.length}</Text>
-                </View>
-              )}
-            </View>
-            <Ionicons
-              name={expandedSections.decade ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color="#666"
-            />
-          </TouchableOpacity>
-
-          {expandedSections.decade && (
-            <View style={styles.filterOptions}>
-              {DECADES.map((decade) => (
-                <View key={decade.value}>
-                  <TouchableOpacity
-                    style={styles.filterOption}
-                    onPress={() => {
-                      if (expandedDecade === decade.value) {
-                        setExpandedDecade(null);
-                      } else {
-                        setExpandedDecade(decade.value);
-                      }
-                    }}
-                  >
-                    <Text style={styles.filterOptionText}>{decade.label}</Text>
-                    <Ionicons
-                      name={expandedDecade === decade.value ? 'chevron-up' : 'chevron-down'}
-                      size={18}
-                      color="#666"
-                    />
-                  </TouchableOpacity>
-
-                  {expandedDecade === decade.value && (
-                    <View style={styles.subOptions}>
-                      {decade.years.map((year) => (
-                        <TouchableOpacity
-                          key={year}
-                          style={[
-                            styles.subOption,
-                            selectedFilters.years.includes(year) && styles.filterOptionSelected
-                          ]}
-                          onPress={() => toggleFilter('years', year)}
-                        >
-                          <Text style={[
-                            styles.filterOptionText,
-                            selectedFilters.years.includes(year) && styles.filterOptionTextSelected
-                          ]}>
-                            {year}
-                          </Text>
-                          {selectedFilters.years.includes(year) && (
-                            <Ionicons name="checkmark" size={18} color="#4c00b4" />
-                          )}
-                        </TouchableOpacity>
-                      ))}
+      {searchMode === 'media' ? (
+        // Media filters and search
+        <>
+          <ScrollView style={styles.filtersContainer}>
+            {/* Type Filter */}
+            <View style={styles.filterSection}>
+              <TouchableOpacity
+                style={styles.filterHeader}
+                onPress={() => toggleSection('type')}
+              >
+                <View style={styles.filterHeaderLeft}>
+                  <Text style={styles.filterTitle}>Type</Text>
+                  {selectedFilters.types.length > 0 && (
+                    <View style={styles.filterBadge}>
+                      <Text style={styles.filterBadgeText}>{selectedFilters.types.length}</Text>
                     </View>
                   )}
                 </View>
-              ))}
-            </View>
-          )}
-        </View>
+                <Ionicons
+                  name={expandedSections.type ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color="#666"
+                />
+              </TouchableOpacity>
 
-        {/* Status Filter */}
-        <View style={styles.filterSection}>
-          <TouchableOpacity
-            style={styles.filterHeader}
-            onPress={() => toggleSection('status')}
-          >
-            <View style={styles.filterHeaderLeft}>
-              <Text style={styles.filterTitle}>Status</Text>
-              {selectedFilters.statuses.length > 0 && (
-                <View style={styles.filterBadge}>
-                  <Text style={styles.filterBadgeText}>{selectedFilters.statuses.length}</Text>
+              {expandedSections.type && (
+                <View style={styles.filterOptions}>
+                  {MEDIA_TYPES.map((type) => (
+                    <TouchableOpacity
+                      key={type.value}
+                      style={[
+                        styles.filterOption,
+                        selectedFilters.types.includes(type.value) && styles.filterOptionSelected
+                      ]}
+                      onPress={() => toggleFilter('types', type.value)}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        selectedFilters.types.includes(type.value) && styles.filterOptionTextSelected
+                      ]}>
+                        {type.label}
+                      </Text>
+                      {selectedFilters.types.includes(type.value) && (
+                        <Ionicons name="checkmark" size={18} color="#4c00b4" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
                 </View>
               )}
             </View>
-            <Ionicons
-              name={expandedSections.status ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color="#666"
-            />
-          </TouchableOpacity>
 
-          {expandedSections.status && (
-            <View style={styles.filterOptions}>
-              {STATUSES.map((status) => (
-                <TouchableOpacity
-                  key={status.value}
-                  style={[
-                    styles.filterOption,
-                    selectedFilters.statuses.includes(status.value) && styles.filterOptionSelected
-                  ]}
-                  onPress={() => toggleFilter('statuses', status.value)}
-                >
-                  <Text style={[
-                    styles.filterOptionText,
-                    selectedFilters.statuses.includes(status.value) && styles.filterOptionTextSelected
-                  ]}>
-                    {status.label}
-                  </Text>
-                  {selectedFilters.statuses.includes(status.value) && (
-                    <Ionicons name="checkmark" size={18} color="#4c00b4" />
+            {/* Genre Filter */}
+            <View style={styles.filterSection}>
+              <TouchableOpacity
+                style={styles.filterHeader}
+                onPress={() => toggleSection('genre')}
+              >
+                <View style={styles.filterHeaderLeft}>
+                  <Text style={styles.filterTitle}>Genre</Text>
+                  {selectedFilters.genres.length > 0 && (
+                    <View style={styles.filterBadge}>
+                      <Text style={styles.filterBadgeText}>{selectedFilters.genres.length}</Text>
+                    </View>
                   )}
-                </TouchableOpacity>
-              ))}
+                </View>
+                <Ionicons
+                  name={expandedSections.genre ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color="#666"
+                />
+              </TouchableOpacity>
+
+              {expandedSections.genre && (
+                <View style={styles.filterOptions}>
+                  {GENRES.map((genre) => (
+                    <TouchableOpacity
+                      key={genre}
+                      style={[
+                        styles.filterOption,
+                        selectedFilters.genres.includes(genre) && styles.filterOptionSelected
+                      ]}
+                      onPress={() => toggleFilter('genres', genre)}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        selectedFilters.genres.includes(genre) && styles.filterOptionTextSelected
+                      ]}>
+                        {genre}
+                      </Text>
+                      {selectedFilters.genres.includes(genre) && (
+                        <Ionicons name="checkmark" size={18} color="#4c00b4" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            {/* Decade/Year Filter */}
+            <View style={styles.filterSection}>
+              <TouchableOpacity
+                style={styles.filterHeader}
+                onPress={() => toggleSection('decade')}
+              >
+                <View style={styles.filterHeaderLeft}>
+                  <Text style={styles.filterTitle}>Year</Text>
+                  {selectedFilters.years.length > 0 && (
+                    <View style={styles.filterBadge}>
+                      <Text style={styles.filterBadgeText}>{selectedFilters.years.length}</Text>
+                    </View>
+                  )}
+                </View>
+                <Ionicons
+                  name={expandedSections.decade ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color="#666"
+                />
+              </TouchableOpacity>
+
+              {expandedSections.decade && (
+                <View style={styles.filterOptions}>
+                  {DECADES.map((decade) => (
+                    <View key={decade.value}>
+                      <TouchableOpacity
+                        style={styles.filterOption}
+                        onPress={() => {
+                          if (expandedDecade === decade.value) {
+                            setExpandedDecade(null);
+                          } else {
+                            setExpandedDecade(decade.value);
+                          }
+                        }}
+                      >
+                        <Text style={styles.filterOptionText}>{decade.label}</Text>
+                        <Ionicons
+                          name={expandedDecade === decade.value ? 'chevron-up' : 'chevron-down'}
+                          size={18}
+                          color="#666"
+                        />
+                      </TouchableOpacity>
+
+                      {expandedDecade === decade.value && (
+                        <View style={styles.subOptions}>
+                          {decade.years.map((year) => (
+                            <TouchableOpacity
+                              key={year}
+                              style={[
+                                styles.subOption,
+                                selectedFilters.years.includes(year) && styles.filterOptionSelected
+                              ]}
+                              onPress={() => toggleFilter('years', year)}
+                            >
+                              <Text style={[
+                                styles.filterOptionText,
+                                selectedFilters.years.includes(year) && styles.filterOptionTextSelected
+                              ]}>
+                                {year}
+                              </Text>
+                              {selectedFilters.years.includes(year) && (
+                                <Ionicons name="checkmark" size={18} color="#4c00b4" />
+                              )}
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            {/* Status Filter */}
+            <View style={styles.filterSection}>
+              <TouchableOpacity
+                style={styles.filterHeader}
+                onPress={() => toggleSection('status')}
+              >
+                <View style={styles.filterHeaderLeft}>
+                  <Text style={styles.filterTitle}>Status</Text>
+                  {selectedFilters.statuses.length > 0 && (
+                    <View style={styles.filterBadge}>
+                      <Text style={styles.filterBadgeText}>{selectedFilters.statuses.length}</Text>
+                    </View>
+                  )}
+                </View>
+                <Ionicons
+                  name={expandedSections.status ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color="#666"
+                />
+              </TouchableOpacity>
+
+              {expandedSections.status && (
+                <View style={styles.filterOptions}>
+                  {STATUSES.map((status) => (
+                    <TouchableOpacity
+                      key={status.value}
+                      style={[
+                        styles.filterOption,
+                        selectedFilters.statuses.includes(status.value) && styles.filterOptionSelected
+                      ]}
+                      onPress={() => toggleFilter('statuses', status.value)}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        selectedFilters.statuses.includes(status.value) && styles.filterOptionTextSelected
+                      ]}>
+                        {status.label}
+                      </Text>
+                      {selectedFilters.statuses.includes(status.value) && (
+                        <Ionicons name="checkmark" size={18} color="#4c00b4" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          </ScrollView>
+
+          {/* Search Button for Media */}
+          {hasActiveFilters() && (
+            <View style={styles.bottomBar}>
+              <TouchableOpacity style={styles.searchButton} onPress={fetchResults}>
+                <Ionicons name="search" size={20} color="#fff" />
+                <Text style={styles.searchButtonText}>Search</Text>
+              </TouchableOpacity>
             </View>
           )}
-        </View>
-      </ScrollView>
-
-      {/* Search Button */}
-      {hasActiveFilters() && (
-        <View style={styles.bottomBar}>
-          <TouchableOpacity style={styles.searchButton} onPress={fetchResults}>
-            <Ionicons name="search" size={20} color="#fff" />
-            <Text style={styles.searchButtonText}>Search</Text>
-          </TouchableOpacity>
+        </>
+      ) : (
+        // User search results
+        <View style={styles.userResultsContainer}>
+          {loading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color="#4c00b4" />
+            </View>
+          ) : userResults.length > 0 ? (
+            <FlatList
+              data={userResults}
+              renderItem={renderUserItem}
+              keyExtractor={(item) => item.id.toString()}
+            />
+          ) : searchQuery.length > 0 ? (
+            <View style={styles.centerContainer}>
+              <Ionicons name="search-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyText}>No users found</Text>
+              <Text style={styles.emptySubtext}>Try a different username</Text>
+            </View>
+          ) : (
+            <View style={styles.centerContainer}>
+              <Ionicons name="people-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyText}>Search for users</Text>
+              <Text style={styles.emptySubtext}>
+                Find friends and see what they're watching
+              </Text>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -553,6 +721,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 15,
+  },
+  modeTabs: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 15,
+  },
+  modeTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  modeTabActive: {
+    backgroundColor: '#ede9fe',
+  },
+  modeTabText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#999',
+  },
+  modeTabTextActive: {
+    color: '#4c00b4',
+    fontWeight: '600',
   },
   searchBar: {
     flexDirection: 'row',
@@ -722,6 +916,63 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 12,
     color: '#666',
+  },
+  userResultsContainer: {
+    flex: 1,
+  },
+  userCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  avatarPlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  username: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#222',
+    marginBottom: 4,
+  },
+  userBio: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  userStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statText: {
+    fontSize: 12,
+    color: '#999',
+  },
+  statDivider: {
+    marginHorizontal: 8,
+    color: '#999',
   },
   centerContainer: {
     flex: 1,

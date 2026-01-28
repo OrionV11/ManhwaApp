@@ -17,7 +17,7 @@ def add_user_reading_media_route(
     return add_user_reading_media(db, user_id, media_id)
 
 
-@router.get("/")
+@router.get("/me")
 def read_user_reading_progress(
     user_id: int = Depends(get_current_user_id), 
     db: Session = Depends(get_db)):
@@ -41,7 +41,7 @@ def mark_media_completed_route(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/completed")
+@router.get("/completed/me")
 def get_user_completed_route(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
