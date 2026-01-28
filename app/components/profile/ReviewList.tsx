@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
@@ -207,20 +208,21 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 18,
     fontWeight: '600',
-    color: '#666',
+    color: '#fff',
   },
   emptySubtext: {
     marginTop: 8,
     fontSize: 14,
-    color: '#999',
+    color: '#fff',
   },
   reviewCard: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surfaceVariant,
+    borderBottomColor: Colors.border,
     marginHorizontal: 8,
     marginVertical: 6,
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   coverImage: {
     width: 60,
@@ -241,7 +243,7 @@ const styles = StyleSheet.create({
   coverPlaceholder: {
     width: 60,
     height: 90,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.background,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -254,12 +256,12 @@ const styles = StyleSheet.create({
   mediaTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: '#fff',
     marginBottom: 4,
   },
   mediaType: {
     fontSize: 12,
-    color: '#666',
+    color: '#fff',
     textTransform: 'uppercase',
   },
   reviewContent: {
@@ -278,15 +280,15 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#222',
+    color: '#fff',
   },
   date: {
     fontSize: 12,
-    color: '#999',
+    color: '#fff',
   },
   reviewText: {
     fontSize: 14,
-    color: '#444',
+    color: '#fff',
     lineHeight: 20,
   },
   actionsRow: {
@@ -302,7 +304,7 @@ const styles = StyleSheet.create({
   },
   likesText: {
     fontSize: 13,
-    color: '#666',
+    color: '#fff',
   },
   deleteButton: {
     flexDirection: 'row',
@@ -311,7 +313,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
-    backgroundColor: '#fee',
+    backgroundColor: '#fff',
   },
   deleteText: {
     fontSize: 13,

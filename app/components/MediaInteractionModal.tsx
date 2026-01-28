@@ -1,4 +1,5 @@
 //MediaInteractionModal.tsx
+import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -29,7 +30,7 @@ type Props = {
   mediaId: number;
   mediaTitle: string;
   onReviewSubmitted?: () => void;
-  onStatusChanged?: () => void;  // ✅ Add callback for status changes
+  onStatusChanged?: () => void;
 };
 
 export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitle, onReviewSubmitted, onStatusChanged }: Props) {
@@ -48,7 +49,7 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
   // Tab state
   const [activeTab, setActiveTab] = useState<'review' | 'folders'>('review');
 
-  // ✅ NEW: Quick actions state
+  // Quick actions state
   const [isLiked, setIsLiked] = useState(false);
   const [readingStatus, setReadingStatus] = useState<'reading' | 'completed' | null>(null);
   const [quickActionLoading, setQuickActionLoading] = useState(false);
@@ -59,21 +60,17 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
     }
   }, [visible, user, activeTab]);
 
-  // ✅ NEW: Check status when modal opens
   useEffect(() => {
     if (visible && user) {
       checkMediaStatus();
     }
   }, [visible, user, mediaId]);
 
-  // ✅ NEW: Check if media is liked and reading status
   const checkMediaStatus = async () => {
     try {
-      // Check if liked
       const likes = await api.get(`/api/favorites/me`);
       setIsLiked(likes.some((item: any) => item.id === mediaId));
 
-      // Check reading status
       const progress = await api.get(`/api/reading-progress/me`);
       const mediaProgress = progress.find((item: any) => item.id === mediaId);
       if (mediaProgress) {
@@ -143,12 +140,10 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
   setQuickActionLoading(true);
   try {
     if (readingStatus === 'completed') {
-      // Remove from completed
       await api.delete(`/api/reading-progress/remove/${mediaId}`);
       setReadingStatus(null);
       Alert.alert('Success', 'Removed from completed list');
     } else {
-      // Use PUT with correct endpoint
       await api.put(`/api/reading-progress/complete/${mediaId}`, {});
       setReadingStatus('completed');
       Alert.alert('Success', 'Marked as completed');
@@ -282,10 +277,10 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <TouchableOpacity style={styles.closeIcon} onPress={handleClose}>
-            <Ionicons name="close" size={28} color="#666" />
+            <Ionicons name="close" size={28} color={Colors.textSecondary} />
           </TouchableOpacity>
 
-          {/* ✅ NEW: Quick Actions Row */}
+          {/* Quick Actions Row */}
           <View style={styles.quickActionsContainer}>
             <Text style={styles.quickActionsTitle}>Quick Actions</Text>
             <View style={styles.quickActionsRow}>
@@ -296,12 +291,12 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
                 disabled={quickActionLoading}
               >
                 {quickActionLoading ? (
-                  <ActivityIndicator size="small" color={isLiked ? '#fff' : '#4c00b4'} />
+                  <ActivityIndicator size="small" color={isLiked ? '#fff' : Colors.primary} />
                 ) : (
                   <Ionicons
                     name={isLiked ? 'heart' : 'heart-outline'}
                     size={24}
-                    color={isLiked ? '#fff' : '#4c00b4'}
+                    color={isLiked ? '#fff' : Colors.primary}
                   />
                 )}
               </TouchableOpacity>
@@ -318,13 +313,13 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
                 {quickActionLoading ? (
                   <ActivityIndicator
                     size="small"
-                    color={readingStatus === 'reading' ? '#fff' : '#4c00b4'}
+                    color={readingStatus === 'reading' ? '#fff' : Colors.primary}
                   />
                 ) : (
                   <Ionicons
                     name={readingStatus === 'reading' ? 'book' : 'book-outline'}
                     size={24}
-                    color={readingStatus === 'reading' ? '#fff' : '#4c00b4'}
+                    color={readingStatus === 'reading' ? '#fff' : Colors.primary}
                   />
                 )}
               </TouchableOpacity>
@@ -341,7 +336,7 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
                 {quickActionLoading ? (
                   <ActivityIndicator
                     size="small"
-                    color={readingStatus === 'completed' ? '#fff' : '#4c00b4'}
+                    color={readingStatus === 'completed' ? '#fff' : Colors.primary}
                   />
                 ) : (
                   <Ionicons
@@ -351,7 +346,7 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
                         : 'checkmark-circle-outline'
                     }
                     size={24}
-                    color={readingStatus === 'completed' ? '#fff' : '#4c00b4'}
+                    color={readingStatus === 'completed' ? '#fff' : Colors.primary}
                   />
                 )}
               </TouchableOpacity>
@@ -416,6 +411,7 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
                     multiline
                     numberOfLines={8}
                     placeholder="Share your thoughts about this manga/manhwa..."
+                    placeholderTextColor={Colors.textTertiary}
                     value={reviewText}
                     onChangeText={setReviewText}
                     textAlignVertical="top"
@@ -445,11 +441,11 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
               <View style={styles.foldersContainer}>
                 {foldersLoading ? (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#4c00b4" />
+                    <ActivityIndicator size="large" color={Colors.primary} />
                   </View>
                 ) : folders.length === 0 ? (
                   <View style={styles.emptyContainer}>
-                    <Ionicons name="folder-outline" size={64} color="#ccc" />
+                    <Ionicons name="folder-outline" size={64} color={Colors.textTertiary} />
                     <Text style={styles.emptyText}>No folders yet</Text>
                     <Text style={styles.emptySubtext}>
                       Create a folder to organize your media
@@ -466,7 +462,7 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
                         disabled={addingToFolder === item.id}
                       >
                         <View style={styles.folderIcon}>
-                          <Ionicons name="folder" size={24} color="#4c00b4" />
+                          <Ionicons name="folder" size={24} color={Colors.primary} />
                         </View>
                         <View style={styles.folderInfo}>
                           <Text style={styles.folderName}>{item.name}</Text>
@@ -477,9 +473,9 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
                           )}
                         </View>
                         {addingToFolder === item.id ? (
-                          <ActivityIndicator size="small" color="#4c00b4" />
+                          <ActivityIndicator size="small" color={Colors.primary} />
                         ) : (
-                          <Ionicons name="add-circle-outline" size={24} color="#4c00b4" />
+                          <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
                         )}
                       </TouchableOpacity>
                     )}
@@ -498,15 +494,15 @@ export default function MediaActionsModal({ visible, onClose, mediaId, mediaTitl
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: Colors.overlay,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 20,
-    paddingHorizontal: 20,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    paddingTop: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
     paddingBottom: 40,
     height: '85%',
   },
@@ -515,134 +511,134 @@ const styles = StyleSheet.create({
     top: 12,
     right: 12,
     zIndex: 10,
-    padding: 8,
-    backgroundColor: '#f5f5f5',
+    padding: Spacing.sm,
+    backgroundColor: Colors.surfaceVariant,
     borderRadius: 20,
   },
-  // ✅ NEW: Quick Actions Styles
   quickActionsContainer: {
     marginTop: 40,
-    marginBottom: 16,
-    paddingBottom: 16,
+    marginBottom: Spacing.md,
+    paddingBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   quickActionsTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
-    marginBottom: 12,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.sm + 4,
   },
   quickActionsRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: Spacing.sm + 4,
   },
   quickActionButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.surfaceVariant,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#4c00b4',
+    borderColor: Colors.primary,
   },
   quickActionActive: {
-    backgroundColor: '#4c00b4',
-    borderColor: '#4c00b4',
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   tabContainer: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: Colors.border,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: Spacing.sm + 4,
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: '#4c00b4',
+    borderBottomColor: Colors.primary,
   },
   tabText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#666',
+    color: Colors.textSecondary,
   },
   activeTabText: {
-    color: '#4c00b4',
+    color: Colors.primary,
     fontWeight: '700',
   },
   contentContainer: {
     flex: 1,
   },
   reviewContainer: {
-    paddingBottom: 20,
+    paddingBottom: Spacing.lg,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: Spacing.lg,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
-    color: '#333',
+    marginBottom: Spacing.sm + 4,
+    color: Colors.text,
   },
   ratingButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: Spacing.sm,
   },
   ratingButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.surfaceVariant,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border,
   },
   ratingButtonActive: {
-    backgroundColor: '#4c00b4',
-    borderColor: '#4c00b4',
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   ratingText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#666',
+    color: Colors.textSecondary,
   },
   ratingTextActive: {
     color: '#fff',
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 12,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.md,
     padding: 14,
     fontSize: 15,
     minHeight: 120,
     maxHeight: 200,
-    backgroundColor: '#fafafa',
+    backgroundColor: Colors.surfaceVariant,
+    color: Colors.text,
   },
   charCount: {
     fontSize: 12,
-    color: '#999',
+    color: Colors.textTertiary,
     marginTop: 6,
     textAlign: 'right',
   },
   submitButton: {
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginTop: 16,
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
   },
   submitButtonDisabled: {
     opacity: 0.6,
@@ -666,26 +662,28 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#666',
-    marginTop: 16,
+    color: Colors.textSecondary,
+    marginTop: Spacing.md,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
-    marginTop: 8,
+    color: Colors.textTertiary,
+    marginTop: Spacing.sm,
     textAlign: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: Spacing.lg,
   },
   folderItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
-    backgroundColor: '#fafafa',
-    borderRadius: 12,
-    marginBottom: 10,
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.sm + 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   folderIcon: {
-    marginRight: 12,
+    marginRight: Spacing.sm + 4,
   },
   folderInfo: {
     flex: 1,
@@ -693,19 +691,19 @@ const styles = StyleSheet.create({
   folderName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
     marginBottom: 4,
   },
   folderDescription: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
   },
   closeButton: {
-    backgroundColor: '#4c00b4',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: Spacing.lg,
   },
   closeButtonText: {
     fontSize: 16,
@@ -715,7 +713,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#222',
-    marginBottom: 8,
+    color: Colors.text,
+    marginBottom: Spacing.sm,
   }
 });

@@ -3,9 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import Manhwa from '../ManhwaFetch';
 import HomeTab from './HomeTab';
 // Import your other tab components when you create them
+import { Colors, Spacing } from '@/constants/theme';
 import FoldersList from './FolderList';
 import ReviewsList from './ReviewsList';
-// import FoldersList from './FoldersList';
 
 export default function HomeView() {
   const [activeTab, setActiveTab] = useState('media');
@@ -40,16 +40,16 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 50,
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   content: {
-    marginTop: 15,
+    marginTop: Spacing.md,
     flex: 1,
   },
   placeholder: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: Spacing.lg,
   },
 });

@@ -152,7 +152,7 @@ const logout = async () => {
     if (!token) throw new Error('No authentication token');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/profile/${user.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/profile/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

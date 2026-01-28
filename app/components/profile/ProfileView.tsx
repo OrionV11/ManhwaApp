@@ -1,3 +1,4 @@
+import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -119,7 +120,7 @@ const handleViewFollowing = () => {
   if (statsLoading && !stats) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4c00b4" />
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
@@ -227,7 +228,7 @@ const handleViewFollowing = () => {
       )}
     </View>
   );
-}  // ✅ Added closing brace
+}
 
 const Stat = ({ label, value }: { label: string; value: number }) => (
   <View style={styles.statBox}>
@@ -239,41 +240,42 @@ const Stat = ({ label, value }: { label: string; value: number }) => (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: Colors.background,
   },
   headerContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   header: {
-    padding: 20,
+    padding: Spacing.lg,
     paddingTop: 60,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surface,
   },
   username: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 8,
+    color: Colors.text,
+    marginBottom: Spacing.sm,
   },
   bio: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   stats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 16,
+    paddingVertical: Spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: Colors.border,
   },
   statBox: {
     alignItems: 'center',
@@ -281,52 +283,52 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
   },
   statLabel: {
     fontSize: 11,
-    color: '#666',
+    color: Colors.textSecondary,
     marginTop: 4,
   },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surface,
   },
   tab: {
     flex: 1,
-    padding: 12,
+    padding: Spacing.sm + 4,
     alignItems: 'center',
   },
   tabActive: {
     borderBottomWidth: 2,
-    borderColor: '#4c00b4',
+    borderColor: Colors.primary,
   },
   tabText: {
-    color: '#999',
+    color: Colors.textSecondary,
     fontSize: 12,
     fontWeight: '500',
   },
   tabTextActive: {
-    color: '#4c00b4',
+    color: Colors.primary,
     fontWeight: '700',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: Spacing.lg,
   },
   errorText: {
     fontSize: 16,
-    color: '#dc2626',
-    marginBottom: 16,
+    color: Colors.error,
+    marginBottom: Spacing.md,
     textAlign: 'center',
   },
   retryButton: {
-    backgroundColor: '#4c00b4',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm + 4,
+    borderRadius: BorderRadius.sm,
   },
   retryText: {
     color: '#fff',
@@ -340,10 +342,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,

@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/theme';
 import React from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 
@@ -167,16 +168,16 @@ const styles = StyleSheet.create({
     padding: 50,
   },
   emptyText: {
-    color: '#999',
+    color: '#fff',
     fontSize: 16,
   },
 
   activityCard: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surfaceVariant,
     borderRadius: 12,
     padding: 15,
     marginBottom: 10,
-    shadowColor: '#000',
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -227,20 +228,20 @@ const styles = StyleSheet.create({
 
   activityText: {
     fontSize: 15,
-    color: '#333',
+    color: '#fff',
     flex: 1,
   },
 
   activityDetails: {
     fontSize: 13,
-    color: '#666',
+    color: '#fff',
     marginTop: 4,
     marginBottom: 4,
   },
 
   timestamp: {
     fontSize: 12,
-    color: '#999',
+    color: '#fff',
     marginTop: 4,
   },
 

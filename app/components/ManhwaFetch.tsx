@@ -1,8 +1,8 @@
+import { BorderRadius, Colors, Spacing, Typography } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Media } from '../services/Manhwa';
-
 
 const API_BASE_URL = 'http://192.168.1.135:3000';  
 const ManhwaFetch: React.FC = () => {
@@ -107,7 +107,7 @@ const ManhwaFetch: React.FC = () => {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={Colors.primary} />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
@@ -133,7 +133,7 @@ const ManhwaFetch: React.FC = () => {
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Search anime or manga..."
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={Colors.textTertiary}
             onSubmitEditing={handleSearch}
           />
           <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
@@ -163,54 +163,53 @@ const ManhwaFetch: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.background,
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#6b7280',
+    marginTop: Spacing.sm,
+    ...Typography.body,
+    color: Colors.textSecondary,
   },
   errorText: {
-    fontSize: 16,
-    color: '#ef4444',
-    padding: 16,
+    ...Typography.body,
+    color: Colors.error,
+    padding: Spacing.md,
   },
   header: {
-    padding: 16,
-    backgroundColor: '#fff',
+    padding: Spacing.md,
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 16,
+    ...Typography.h1,
+    marginBottom: Spacing.md,
   },
   searchContainer: {
     flexDirection: 'row',
-    gap: 8,
+    gap: Spacing.sm,
   },
   searchInput: {
     flex: 1,
-    padding: 12,
+    padding: Spacing.sm + 4,
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.sm,
     fontSize: 14,
+    color: Colors.text,
   },
   searchButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm + 4,
+    borderRadius: BorderRadius.sm,
     justifyContent: 'center',
   },
   searchButtonText: {
@@ -219,30 +218,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   gridContainer: {
-    padding: 8,
+    padding: Spacing.sm,
   },
   row: {
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    paddingHorizontal: Spacing.sm,
   },
   card: {
     flex: 1,
     margin: 6,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
     maxWidth: '31%',
   },
   imageContainer: {
-    width: '50%',
-    height: 50,
-    backgroundColor: '#e5e7eb',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    width: '100%',
+    height: 150,
+    backgroundColor: Colors.surfaceVariant,
+    borderTopLeftRadius: BorderRadius.md,
+    borderTopRightRadius: BorderRadius.md,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -257,30 +258,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   noImageText: {
-    color: '#9ca3af',
+    color: Colors.textTertiary,
     fontSize: 12,
   },
   badge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    top: Spacing.sm,
+    right: Spacing.sm,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
     borderRadius: 6,
   },
   badgeText: {
     color: '#fff',
     fontSize: 10,
     fontWeight: '600',
+    textTransform: 'uppercase',
   },
   info: {
-    padding: 10,
+    padding: Spacing.sm + 2,
   },
   title: {
     fontWeight: '600',
     fontSize: 12,
-    color: '#111827',
+    color: Colors.text,
     marginBottom: 6,
     minHeight: 32,
   },
@@ -296,7 +298,7 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#eab308',
+    color: Colors.warning,
   },
   genresContainer: {
     flexDirection: 'row',
@@ -304,18 +306,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   genreTag: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: Colors.surfaceVariant,
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 4,
   },
   genreText: {
     fontSize: 10,
-    color: '#374151',
+    color: Colors.textSecondary,
   },
   genreMore: {
     fontSize: 10,
-    color: '#6b7280',
+    color: Colors.textTertiary,
     paddingVertical: 3,
   },
   emptyContainer: {
@@ -323,7 +325,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#6b7280',
+    color: Colors.textSecondary,
   },
 });
 

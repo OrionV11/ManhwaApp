@@ -110,39 +110,44 @@ const EditProfileScreen = () => {
 };
 
   const handleSave = async () => {
-    // Validation
-    if (!username.trim()) {
-      Alert.alert('Error', 'Username cannot be empty');
-      return;
+  // Validation
+  if (!username.trim()) {
+    Alert.alert('Error', 'Username cannot be empty');
+    return;
+  }
+
+  if (username.length < 3) {
+    Alert.alert('Error', 'Username must be at least 3 characters');
+    return;
+  }
+
+  if (bio.length > 500) {
+    Alert.alert('Error', 'Bio cannot exceed 500 characters');
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const updateData: any = {
+      username: username.trim(),
+      bio: bio.trim(),
+    };
+
+    // Only include profile_picture if user selected a new one
+    if (profileImage) {
+      updateData.profile_picture = profileImage;
     }
 
-    if (username.length < 3) {
-      Alert.alert('Error', 'Username must be at least 3 characters');
-      return;
-    }
+    await updateProfile(updateData);
 
-    if (bio.length > 500) {
-      Alert.alert('Error', 'Bio cannot exceed 500 characters');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Call API to update profile
-      await updateProfile({
-        username: username.trim(),
-        bio: bio.trim(),
-        profile_picture: profileImage,
-      });
-
-      Alert.alert('Success', 'Profile updated successfully!');
-      router.back();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update profile');
-    } finally {
-      setLoading(false);
-    }
-  };
+    Alert.alert('Success', 'Profile updated successfully!');
+    router.back();
+  } catch (error: any) {
+    Alert.alert('Error', error.message || 'Failed to update profile');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleCancel = () => {
     router.back();

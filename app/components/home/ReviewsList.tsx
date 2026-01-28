@@ -1,3 +1,4 @@
+import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -52,10 +53,9 @@ export default function ReviewsList() {
     }
 
     try {
-      // Fetch public reviews sorted by popularity
       const data = await api.get<Review[]>(
         '/api/reviews/public?sort=popular&limit=50',
-        false  // Public endpoint, no auth required
+        false
       );
       setReviews(data);
     } catch (error) {
@@ -74,7 +74,6 @@ export default function ReviewsList() {
   const handleLikeReview = async (reviewId: number) => {
     try {
       await api.post(`/api/reviews/${reviewId}/like`, {});
-      // Refresh to show updated like count
       fetchPublicReviews();
     } catch (error) {
       console.error('Like error:', error);
@@ -106,7 +105,7 @@ export default function ReviewsList() {
           />
         ) : (
           <View style={styles.userAvatarPlaceholder}>
-            <Ionicons name="person" size={20} color="#999" />
+            <Ionicons name="person" size={20} color={Colors.textSecondary} />
           </View>
         )}
         <Text style={styles.username}>{item.user.username}</Text>
@@ -127,7 +126,7 @@ export default function ReviewsList() {
           />
         ) : (
           <View style={styles.coverPlaceholder}>
-            <Ionicons name="image-outline" size={24} color="#999" />
+            <Ionicons name="image-outline" size={24} color={Colors.textTertiary} />
           </View>
         )}
         <View style={styles.mediaInfo}>
@@ -136,7 +135,7 @@ export default function ReviewsList() {
           </Text>
           <Text style={styles.mediaType}>{item.media.type}</Text>
           <View style={styles.ratingBadge}>
-            <Ionicons name="star" size={16} color="#fbbf24" />
+            <Ionicons name="star" size={16} color={Colors.warning} />
             <Text style={styles.rating}>{item.rating}/10</Text>
           </View>
         </View>
@@ -158,7 +157,7 @@ export default function ReviewsList() {
           style={styles.likeButton}
           onPress={() => handleLikeReview(item.id)}
         >
-          <Ionicons name="heart-outline" size={20} color="#dc2626" />
+          <Ionicons name="heart-outline" size={20} color={Colors.error} />
           <Text style={styles.likesText}>{item.likes_count}</Text>
         </TouchableOpacity>
       </View>
@@ -168,7 +167,7 @@ export default function ReviewsList() {
   if (loading && reviews.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#4c00b4" />
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
@@ -184,7 +183,7 @@ export default function ReviewsList() {
 
       {reviews.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="star-outline" size={64} color="#ccc" />
+          <Ionicons name="star-outline" size={64} color={Colors.textTertiary} />
           <Text style={styles.emptyText}>No reviews yet</Text>
           <Text style={styles.emptySubtext}>
             Be the first to write a review!
@@ -207,7 +206,7 @@ export default function ReviewsList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.background,
   },
   centerContainer: {
     flex: 1,
@@ -215,23 +214,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    padding: 16,
-    backgroundColor: '#fff',
+    padding: Spacing.md,
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
     marginTop: 4,
   },
   listContainer: {
-    padding: 16,
+    padding: Spacing.md,
   },
   emptyContainer: {
     flex: 1,
@@ -242,89 +241,92 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#666',
-    marginTop: 16,
+    color: Colors.textSecondary,
+    marginTop: Spacing.md,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
-    marginTop: 8,
+    color: Colors.textTertiary,
+    marginTop: Spacing.sm,
   },
   reviewCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   userSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: Spacing.sm + 4,
   },
   userAvatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    marginRight: 8,
+    marginRight: Spacing.sm,
   },
   userAvatarPlaceholder: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: Colors.surfaceVariant,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: Spacing.sm,
   },
   username: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
   },
   date: {
     fontSize: 12,
-    color: '#999',
+    color: Colors.textTertiary,
     marginLeft: 4,
   },
   mediaSection: {
     flexDirection: 'row',
-    marginBottom: 12,
-    paddingBottom: 12,
+    marginBottom: Spacing.sm + 4,
+    paddingBottom: Spacing.sm + 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   coverImage: {
     width: 60,
     height: 90,
-    borderRadius: 8,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.surfaceVariant,
   },
   coverPlaceholder: {
     width: 60,
     height: 90,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.surfaceVariant,
     justifyContent: 'center',
     alignItems: 'center',
   },
   mediaInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: Spacing.sm + 4,
     justifyContent: 'center',
   },
   mediaTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
     marginBottom: 4,
   },
   mediaType: {
     fontSize: 12,
-    color: '#999',
+    color: Colors.textSecondary,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
@@ -336,28 +338,28 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
   },
   reviewContent: {
-    marginBottom: 12,
+    marginBottom: Spacing.sm + 4,
   },
   reviewTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
-    marginBottom: 8,
+    color: Colors.text,
+    marginBottom: Spacing.sm,
   },
   reviewText: {
     fontSize: 14,
-    color: '#555',
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 12,
+    paddingTop: Spacing.sm + 4,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: Colors.border,
   },
   likeButton: {
     flexDirection: 'row',
@@ -367,6 +369,6 @@ const styles = StyleSheet.create({
   likesText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: Colors.textSecondary,
   },
 });

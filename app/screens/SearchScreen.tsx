@@ -1,5 +1,6 @@
 // screens/SearchScreen.tsx
 
+import { BorderRadius, Colors, Spacing, Typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -143,31 +144,27 @@ const SearchScreen = () => {
     clearAllFilters();
   };
 
-  // Search users
-  // screens/SearchScreen.tsx
+  const searchUsers = async (query: string) => {
+    if (!query.trim()) {
+      setUserResults([]);
+      return;
+    }
 
-const searchUsers = async (query: string) => {
-  if (!query.trim()) {
-    setUserResults([]);
-    return;
-  }
+    setLoading(true);
+    try {
+      const results = await api.get<User[]>(
+        `/api/users/search?q=${encodeURIComponent(query.trim())}`,
+        false
+      );
+      setUserResults(results);
+    } catch (error) {
+      console.error('User search error:', error);
+      setUserResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  setLoading(true);
-  try {
-    const results = await api.get<User[]>(
-      `/api/users/search?q=${encodeURIComponent(query.trim())}`,
-      false  // ✅ Set requiresAuth to false (public endpoint)
-    );
-    setUserResults(results);
-  } catch (error) {
-    console.error('User search error:', error);
-    setUserResults([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // Existing media search function
   const fetchResults = async () => {
     if (!hasActiveFilters()) {
       setShowResults(false);
@@ -181,12 +178,10 @@ const searchUsers = async (query: string) => {
       let url = `${API_BASE_URL}/api/media`;
       const params = new URLSearchParams();
 
-      // If there's a search query, use the search endpoint
       if (searchQuery.trim()) {
         url += '/search';
         params.append('query', searchQuery);
         
-        // Add filters to search
         if (selectedFilters.types.length > 0) {
           params.append('type', selectedFilters.types[0]);
         }
@@ -203,7 +198,6 @@ const searchUsers = async (query: string) => {
 
         let data = await response.json();
 
-        // Client-side filtering for the rest
         if (selectedFilters.statuses.length > 0) {
           data = data.filter((item: Media) => 
             selectedFilters.statuses.includes(item.status)
@@ -232,11 +226,9 @@ const searchUsers = async (query: string) => {
 
         setMediaResults(data);
       } else {
-        // No search query - use filter endpoint
         url += '/filtering';
         params.append('limit', '50');
         
-        // Add all filters as comma-separated values
         if (selectedFilters.types.length > 0) {
           params.append('types', selectedFilters.types.join(','));
         }
@@ -287,7 +279,7 @@ const searchUsers = async (query: string) => {
         <Image source={{ uri: item.cover_image }} style={styles.coverImage} />
       ) : (
         <View style={[styles.coverImage, styles.placeholderImage]}>
-          <Ionicons name="image-outline" size={30} color="#ccc" />
+          <Ionicons name="image-outline" size={30} color={Colors.textTertiary} />
         </View>
       )}
       <Text style={styles.mediaTitle} numberOfLines={2}>
@@ -295,7 +287,7 @@ const searchUsers = async (query: string) => {
       </Text>
       {item.average_score && (
         <View style={styles.scoreContainer}>
-          <Ionicons name="star" size={12} color="#FFD700" />
+          <Ionicons name="star" size={12} color={Colors.warning} />
           <Text style={styles.scoreText}>{item.average_score}</Text>
         </View>
       )}
@@ -315,7 +307,7 @@ const searchUsers = async (query: string) => {
           />
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={24} color="#999" />
+            <Ionicons name="person" size={24} color={Colors.textSecondary} />
           </View>
         )}
         <View style={styles.userDetails}>
@@ -336,17 +328,16 @@ const searchUsers = async (query: string) => {
           </View>
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#999" />
+      <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
     </TouchableOpacity>
   );
 
-  // Media results view
   if (showResults && searchMode === 'media') {
     return (
       <View style={styles.container}>
         <View style={styles.resultsHeader}>
           <TouchableOpacity onPress={() => setShowResults(false)} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
+            <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
           <Text style={styles.resultsTitle}>
             {mediaResults.length} {mediaResults.length === 1 ? 'Result' : 'Results'}
@@ -358,11 +349,11 @@ const searchUsers = async (query: string) => {
 
         {loading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#4c00b4" />
+            <ActivityIndicator size="large" color={Colors.primary} />
           </View>
         ) : mediaResults.length === 0 ? (
           <View style={styles.centerContainer}>
-            <Ionicons name="search-outline" size={64} color="#ccc" />
+            <Ionicons name="search-outline" size={64} color={Colors.textTertiary} />
             <Text style={styles.emptyText}>No results found</Text>
             <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
           </View>
@@ -382,11 +373,9 @@ const searchUsers = async (query: string) => {
 
   return (
     <View style={styles.container}>
-      {/* Header with Search */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Search</Text>
 
-        {/* Mode Tabs */}
         <View style={styles.modeTabs}>
           <TouchableOpacity
             style={[styles.modeTab, searchMode === 'media' && styles.modeTabActive]}
@@ -395,7 +384,7 @@ const searchUsers = async (query: string) => {
             <Ionicons
               name="film"
               size={18}
-              color={searchMode === 'media' ? '#4c00b4' : '#999'}
+              color={searchMode === 'media' ? Colors.primary : Colors.textSecondary}
             />
             <Text style={[styles.modeTabText, searchMode === 'media' && styles.modeTabTextActive]}>
               Media
@@ -408,7 +397,7 @@ const searchUsers = async (query: string) => {
             <Ionicons
               name="people"
               size={18}
-              color={searchMode === 'users' ? '#4c00b4' : '#999'}
+              color={searchMode === 'users' ? Colors.primary : Colors.textSecondary}
             />
             <Text style={[styles.modeTabText, searchMode === 'users' && styles.modeTabTextActive]}>
               Users
@@ -417,11 +406,11 @@ const searchUsers = async (query: string) => {
         </View>
 
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#999" />
+          <Ionicons name="search" size={20} color={Colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder={searchMode === 'media' ? 'Search titles...' : 'Search users...'}
-            placeholderTextColor="#999"
+            placeholderTextColor={Colors.textTertiary}
             value={searchQuery}
             onChangeText={(text) => {
               setSearchQuery(text);
@@ -435,14 +424,13 @@ const searchUsers = async (query: string) => {
               setSearchQuery('');
               setUserResults([]);
             }}>
-              <Ionicons name="close-circle" size={20} color="#999" />
+              <Ionicons name="close-circle" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       {searchMode === 'media' ? (
-        // Media filters and search
         <>
           <ScrollView style={styles.filtersContainer}>
             {/* Type Filter */}
@@ -462,7 +450,7 @@ const searchUsers = async (query: string) => {
                 <Ionicons
                   name={expandedSections.type ? 'chevron-up' : 'chevron-down'}
                   size={20}
-                  color="#666"
+                  color={Colors.textSecondary}
                 />
               </TouchableOpacity>
 
@@ -484,7 +472,7 @@ const searchUsers = async (query: string) => {
                         {type.label}
                       </Text>
                       {selectedFilters.types.includes(type.value) && (
-                        <Ionicons name="checkmark" size={18} color="#4c00b4" />
+                        <Ionicons name="checkmark" size={18} color={Colors.primary} />
                       )}
                     </TouchableOpacity>
                   ))}
@@ -509,7 +497,7 @@ const searchUsers = async (query: string) => {
                 <Ionicons
                   name={expandedSections.genre ? 'chevron-up' : 'chevron-down'}
                   size={20}
-                  color="#666"
+                  color={Colors.textSecondary}
                 />
               </TouchableOpacity>
 
@@ -531,7 +519,7 @@ const searchUsers = async (query: string) => {
                         {genre}
                       </Text>
                       {selectedFilters.genres.includes(genre) && (
-                        <Ionicons name="checkmark" size={18} color="#4c00b4" />
+                        <Ionicons name="checkmark" size={18} color={Colors.primary} />
                       )}
                     </TouchableOpacity>
                   ))}
@@ -556,7 +544,7 @@ const searchUsers = async (query: string) => {
                 <Ionicons
                   name={expandedSections.decade ? 'chevron-up' : 'chevron-down'}
                   size={20}
-                  color="#666"
+                  color={Colors.textSecondary}
                 />
               </TouchableOpacity>
 
@@ -578,7 +566,7 @@ const searchUsers = async (query: string) => {
                         <Ionicons
                           name={expandedDecade === decade.value ? 'chevron-up' : 'chevron-down'}
                           size={18}
-                          color="#666"
+                          color={Colors.textSecondary}
                         />
                       </TouchableOpacity>
 
@@ -600,7 +588,7 @@ const searchUsers = async (query: string) => {
                                 {year}
                               </Text>
                               {selectedFilters.years.includes(year) && (
-                                <Ionicons name="checkmark" size={18} color="#4c00b4" />
+                                <Ionicons name="checkmark" size={18} color={Colors.primary} />
                               )}
                             </TouchableOpacity>
                           ))}
@@ -629,7 +617,7 @@ const searchUsers = async (query: string) => {
                 <Ionicons
                   name={expandedSections.status ? 'chevron-up' : 'chevron-down'}
                   size={20}
-                  color="#666"
+                  color={Colors.textSecondary}
                 />
               </TouchableOpacity>
 
@@ -651,7 +639,7 @@ const searchUsers = async (query: string) => {
                         {status.label}
                       </Text>
                       {selectedFilters.statuses.includes(status.value) && (
-                        <Ionicons name="checkmark" size={18} color="#4c00b4" />
+                        <Ionicons name="checkmark" size={18} color={Colors.primary} />
                       )}
                     </TouchableOpacity>
                   ))}
@@ -660,7 +648,6 @@ const searchUsers = async (query: string) => {
             </View>
           </ScrollView>
 
-          {/* Search Button for Media */}
           {hasActiveFilters() && (
             <View style={styles.bottomBar}>
               <TouchableOpacity style={styles.searchButton} onPress={fetchResults}>
@@ -671,11 +658,10 @@ const searchUsers = async (query: string) => {
           )}
         </>
       ) : (
-        // User search results
         <View style={styles.userResultsContainer}>
           {loading ? (
             <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" color="#4c00b4" />
+              <ActivityIndicator size="large" color={Colors.primary} />
             </View>
           ) : userResults.length > 0 ? (
             <FlatList
@@ -685,13 +671,13 @@ const searchUsers = async (query: string) => {
             />
           ) : searchQuery.length > 0 ? (
             <View style={styles.centerContainer}>
-              <Ionicons name="search-outline" size={64} color="#ccc" />
+              <Ionicons name="search-outline" size={64} color={Colors.textTertiary} />
               <Text style={styles.emptyText}>No users found</Text>
               <Text style={styles.emptySubtext}>Try a different username</Text>
             </View>
           ) : (
             <View style={styles.centerContainer}>
-              <Ionicons name="people-outline" size={64} color="#ccc" />
+              <Ionicons name="people-outline" size={64} color={Colors.textTertiary} />
               <Text style={styles.emptyText}>Search for users</Text>
               <Text style={styles.emptySubtext}>
                 Find friends and see what they're watching
@@ -707,88 +693,89 @@ const searchUsers = async (query: string) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   header: {
     paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 15,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
+    ...Typography.h1,
+    marginBottom: Spacing.md,
   },
   modeTabs: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 15,
+    gap: Spacing.sm + 2,
+    marginBottom: Spacing.md,
   },
   modeTab: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.surfaceVariant,
   },
   modeTabActive: {
-    backgroundColor: '#ede9fe',
+    backgroundColor: Colors.highlight,
+    borderWidth: 1,
+    borderColor: Colors.primary,
   },
   modeTabText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#999',
+    color: Colors.textSecondary,
   },
   modeTabTextActive: {
-    color: '#4c00b4',
+    color: Colors.primary,
     fontWeight: '600',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.sm + 2,
+    paddingHorizontal: Spacing.md,
     height: 45,
-    gap: 10,
+    gap: Spacing.sm + 2,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: Colors.text,
   },
   filtersContainer: {
     flex: 1,
   },
   filterSection: {
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   filterHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
+    padding: Spacing.lg,
+    backgroundColor: Colors.surface,
   },
   filterHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.sm + 2,
   },
   filterTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: Colors.text,
   },
   filterBadge: {
-    backgroundColor: '#4c00b4',
-    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.sm + 2,
     minWidth: 20,
     height: 20,
     justifyContent: 'center',
@@ -801,55 +788,55 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   filterOptions: {
-    backgroundColor: '#fafafa',
+    backgroundColor: Colors.surfaceVariant,
   },
   filterOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: Spacing.sm + 4,
+    paddingHorizontal: Spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   filterOptionSelected: {
-    backgroundColor: '#f0e6ff',
+    backgroundColor: Colors.highlight,
   },
   filterOptionText: {
     fontSize: 16,
-    color: '#333',
+    color: Colors.text,
   },
   filterOptionTextSelected: {
-    color: '#4c00b4',
+    color: Colors.primary,
     fontWeight: '600',
   },
   subOptions: {
-    backgroundColor: '#f5f5f5',
-    paddingLeft: 20,
+    backgroundColor: Colors.background,
+    paddingLeft: Spacing.lg,
   },
   subOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: Spacing.sm + 2,
+    paddingHorizontal: Spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: Colors.divider,
   },
   bottomBar: {
-    padding: 20,
+    padding: Spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    backgroundColor: '#fff',
+    borderTopColor: Colors.border,
+    backgroundColor: Colors.surface,
   },
   searchButton: {
     flexDirection: 'row',
-    backgroundColor: '#4c00b4',
-    paddingVertical: 15,
-    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm + 2,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.sm + 2,
   },
   searchButtonText: {
     color: '#fff',
@@ -861,10 +848,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 15,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface,
   },
   backButton: {
     padding: 5,
@@ -872,31 +860,31 @@ const styles = StyleSheet.create({
   resultsTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: Colors.text,
     flex: 1,
     textAlign: 'center',
   },
   clearText: {
     fontSize: 16,
-    color: '#4c00b4',
+    color: Colors.primary,
     fontWeight: '600',
   },
   resultsGrid: {
-    padding: 15,
+    padding: Spacing.md,
   },
   columnWrapper: {
     justifyContent: 'space-between',
   },
   mediaCard: {
     width: '31%',
-    marginBottom: 20,
+    marginBottom: Spacing.lg,
   },
   coverImage: {
     width: '100%',
     aspectRatio: 2/3,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    marginBottom: 8,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.surfaceVariant,
+    marginBottom: Spacing.sm,
   },
   placeholderImage: {
     justifyContent: 'center',
@@ -904,7 +892,7 @@ const styles = StyleSheet.create({
   },
   mediaTitle: {
     fontSize: 12,
-    color: '#333',
+    color: Colors.text,
     lineHeight: 16,
     marginBottom: 4,
   },
@@ -915,7 +903,7 @@ const styles = StyleSheet.create({
   },
   scoreText: {
     fontSize: 12,
-    color: '#666',
+    color: Colors.textSecondary,
   },
   userResultsContainer: {
     flex: 1,
@@ -924,9 +912,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface,
   },
   userInfo: {
     flexDirection: 'row',
@@ -937,16 +926,16 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    marginRight: 12,
+    marginRight: Spacing.sm + 4,
   },
   avatarPlaceholder: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: Colors.surfaceVariant,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: Spacing.sm + 4,
   },
   userDetails: {
     flex: 1,
@@ -954,12 +943,12 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
     marginBottom: 4,
   },
   userBio: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
     marginBottom: 4,
   },
   userStats: {
@@ -968,27 +957,27 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 12,
-    color: '#999',
+    color: Colors.textTertiary,
   },
   statDivider: {
-    marginHorizontal: 8,
-    color: '#999',
+    marginHorizontal: Spacing.sm,
+    color: Colors.textTertiary,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: Spacing.lg,
   },
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#999',
-    marginTop: 15,
+    color: Colors.textSecondary,
+    marginTop: Spacing.md,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#bbb',
+    color: Colors.textTertiary,
     marginTop: 5,
   },
 });

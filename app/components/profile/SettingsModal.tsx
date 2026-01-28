@@ -1,4 +1,5 @@
 import { User } from '@/app/services/Manhwa';
+import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -19,7 +20,6 @@ export default function SettingsModal({ visible, onClose, user }: Props) {
     const { logout } = useAuth();
     const router = useRouter();
 
-    // Edit Profile function
     const handleEditProfile = () => {
         onClose();
         router.push('/edit-profile');
@@ -169,7 +169,7 @@ const handleViewFollowing = () => {
                     <View style={styles.header}>
                         <Text style={styles.title}>Settings</Text>
                         <TouchableOpacity onPress={onClose} style={styles.closeIcon}>
-                            <Ionicons name="close" size={28} color="#666" />
+                            <Ionicons name="close" size={28} color={Colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -185,9 +185,9 @@ const handleViewFollowing = () => {
                                     router.push('/user-lists');
                                 }}
                             >
-                                <Ionicons name="list-outline" size={22} color="#4c00b4" />
+                                <Ionicons name="list-outline" size={22} color={Colors.primary} />
                                 <Text style={styles.optionText}>My Lists</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                             </TouchableOpacity>
 
                             <TouchableOpacity 
@@ -197,9 +197,9 @@ const handleViewFollowing = () => {
                                     router.push('/screens/ProfileReadList');
                                 }}
                             >
-                                <Ionicons name="book-outline" size={22} color="#4c00b4" />
+                                <Ionicons name="book-outline" size={22} color={Colors.primary} />
                                 <Text style={styles.optionText}>Read List</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                             </TouchableOpacity>
 
                             <TouchableOpacity 
@@ -209,9 +209,9 @@ const handleViewFollowing = () => {
                                     router.push('/screens/ProfileLikes');
                                 }}
                             >
-                                <Ionicons name="heart-outline" size={22} color="#4c00b4" />
+                                <Ionicons name="heart-outline" size={22} color={Colors.primary} />
                                 <Text style={styles.optionText}>Likes</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                             </TouchableOpacity>
 
                             <TouchableOpacity 
@@ -221,27 +221,27 @@ const handleViewFollowing = () => {
                                     router.push('/screens/ProfileReviews');
                                 }}
                             >
-                                <Ionicons name="star-outline" size={22} color="#4c00b4" />
+                                <Ionicons name="star-outline" size={22} color={Colors.primary} />
                                 <Text style={styles.optionText}>All Reviews</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                             </TouchableOpacity>
 
                             <TouchableOpacity 
                                 style={styles.option} 
                                 onPress={handleViewFollowing}
                             >
-                                <Ionicons name="people-outline" size={22} color="#4c00b4" />
+                                <Ionicons name="people-outline" size={22} color={Colors.primary} />
                                 <Text style={styles.optionText}>Following</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                             </TouchableOpacity>
 
                             <TouchableOpacity 
                                 style={styles.option} 
                                 onPress={handleViewFollowers}
                             >
-                                <Ionicons name="people-outline" size={22} color="#4c00b4" />
+                                <Ionicons name="people-outline" size={22} color={Colors.primary} />
                                 <Text style={styles.optionText}>Followers</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
@@ -250,15 +250,15 @@ const handleViewFollowing = () => {
                             <Text style={styles.sectionLabel}>ACCOUNT</Text>
                             
                             <TouchableOpacity style={styles.option} onPress={handleEditProfile}>
-                                <Ionicons name="person-outline" size={22} color="#666" />
+                                <Ionicons name="person-outline" size={22} color={Colors.textSecondary} />
                                 <Text style={styles.optionText}>Edit Profile</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.option} onPress={handleChangePassword}>
-                                <Ionicons name="lock-closed-outline" size={22} color="#666" />
+                                <Ionicons name="lock-closed-outline" size={22} color={Colors.textSecondary} />
                                 <Text style={styles.optionText}>Change Password</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
@@ -267,7 +267,7 @@ const handleViewFollowing = () => {
                             <Text style={styles.sectionLabel}>PREFERENCES</Text>
                             
                             <TouchableOpacity style={styles.option} onPress={handleToggleNotification}>
-                                <Ionicons name="notifications-outline" size={22} color="#666" />
+                                <Ionicons name="notifications-outline" size={22} color={Colors.textSecondary} />
                                 <Text style={styles.optionText}>Notifications</Text>
                                 <View style={styles.toggleContainer}>
                                     <Text style={styles.toggleText}>
@@ -276,13 +276,13 @@ const handleViewFollowing = () => {
                                     <Ionicons 
                                         name={notificationEnabled ? "toggle" : "toggle-outline"} 
                                         size={32} 
-                                        color={notificationEnabled ? "#4c00b4" : "#999"} 
+                                        color={notificationEnabled ? Colors.primary : Colors.textSecondary} 
                                     />
                                 </View>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.option} onPress={handleTogglePrivacy}>
-                                <Ionicons name="eye-off-outline" size={22} color="#666" />
+                                <Ionicons name="eye-off-outline" size={22} color={Colors.textSecondary} />
                                 <Text style={styles.optionText}>Private Account</Text>
                                 <View style={styles.toggleContainer}>
                                     <Text style={styles.toggleText}>
@@ -291,15 +291,15 @@ const handleViewFollowing = () => {
                                     <Ionicons 
                                         name={privateAccount ? "toggle" : "toggle-outline"} 
                                         size={32} 
-                                        color={privateAccount ? "#4c00b4" : "#999"} 
+                                        color={privateAccount ? Colors.primary : Colors.textSecondary} 
                                     />
                                 </View>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.option} onPress={handleBlockedUsers}>
-                                <Ionicons name="ban-outline" size={22} color="#666" />
+                                <Ionicons name="ban-outline" size={22} color={Colors.textSecondary} />
                                 <Text style={styles.optionText}>Blocked Users</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
@@ -308,15 +308,15 @@ const handleViewFollowing = () => {
                             <Text style={styles.sectionLabel}>LEGAL</Text>
                             
                             <TouchableOpacity style={styles.option} onPress={handlePrivacyPolicy}>
-                                <Ionicons name="shield-outline" size={22} color="#666" />
+                                <Ionicons name="shield-outline" size={22} color={Colors.textSecondary} />
                                 <Text style={styles.optionText}>Privacy Policy</Text>
-                                <Ionicons name="open-outline" size={18} color="#999" />
+                                <Ionicons name="open-outline" size={18} color={Colors.textSecondary} />
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.option} onPress={handleTermsOfService}>
-                                <Ionicons name="document-text-outline" size={22} color="#666" />
+                                <Ionicons name="document-text-outline" size={22} color={Colors.textSecondary} />
                                 <Text style={styles.optionText}>Terms of Service</Text>
-                                <Ionicons name="open-outline" size={18} color="#999" />
+                                <Ionicons name="open-outline" size={18} color={Colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
@@ -329,7 +329,7 @@ const handleViewFollowing = () => {
                                 onPress={handleLogout}
                                 disabled={loading}
                             >
-                                <Ionicons name="log-out-outline" size={22} color="#dc2626" />
+                                <Ionicons name="log-out-outline" size={22} color={Colors.error} />
                                 <Text style={styles.dangerText}>Logout</Text>
                             </TouchableOpacity>
 
@@ -338,7 +338,7 @@ const handleViewFollowing = () => {
                                 onPress={handleDeleteAccount}
                                 disabled={loading}
                             >
-                                <Ionicons name="trash-outline" size={22} color="#dc2626" />
+                                <Ionicons name="trash-outline" size={22} color={Colors.error} />
                                 <Text style={styles.dangerText}>
                                     {loading ? 'Deleting...' : 'Delete Account'}
                                 </Text>
@@ -355,13 +355,13 @@ const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
         justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: Colors.overlay,
     },
     modalContent: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingTop: 20,
+        backgroundColor: Colors.surface,
+        borderTopLeftRadius: BorderRadius.xl,
+        borderTopRightRadius: BorderRadius.xl,
+        paddingTop: Spacing.lg,
         paddingBottom: 40,
         maxHeight: '90%',
     },
@@ -369,68 +369,68 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 20,
-        paddingBottom: 16,
+        paddingHorizontal: Spacing.lg,
+        paddingBottom: Spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        borderBottomColor: Colors.border,
         position: 'relative',
     },
     title: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#222',
+        color: '#fafafaff',
     },
     closeIcon: {
         position: 'absolute',
-        right: 20,
+        right: Spacing.lg,
         padding: 4,
     },
     section: {
-        paddingTop: 20,
-        paddingBottom: 12,
+        paddingTop: Spacing.lg,
+        paddingBottom: Spacing.sm + 4,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        borderBottomColor: Colors.border,
     },
     sectionLabel: {
         fontSize: 11,
         fontWeight: '700',
-        color: '#999',
+        color: Colors.textTertiary,
         letterSpacing: 1,
-        marginBottom: 12,
-        paddingHorizontal: 20,
+        marginBottom: Spacing.sm + 4,
+        paddingHorizontal: Spacing.lg,
     },
     option: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 14,
-        paddingHorizontal: 20,
-        gap: 12,
+        paddingHorizontal: Spacing.lg,
+        gap: Spacing.sm + 4,
     },
     optionText: {
         flex: 1,
         fontSize: 16,
-        color: '#333',
+        color: Colors.text,
     },
     toggleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: Spacing.sm,
     },
     toggleText: {
         fontSize: 14,
-        color: '#666',
+        color: Colors.textSecondary,
         fontWeight: '500',
     },
     dangerOption: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 14,
-        paddingHorizontal: 20,
-        gap: 12,
+        paddingHorizontal: Spacing.lg,
+        gap: Spacing.sm + 4,
     },
     dangerText: {
         fontSize: 16,
-        color: '#dc2626',
+        color: Colors.error,
         fontWeight: '600',
     },
 });

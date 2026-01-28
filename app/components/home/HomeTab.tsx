@@ -1,4 +1,5 @@
 //HomeTabs
+import { Colors } from '@/constants/theme';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -21,7 +22,7 @@ export default function HomeTab({activeTab, onChange}: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#eee' },
+  container: { flexDirection: 'row', borderBottomWidth: 1, borderColor: Colors.background },
   tab: { flex: 1, padding: 14, alignItems: 'center' },
   text: { color: '#999' },
   active: { color: '#6f9dc7ff', fontWeight: 'bold' },

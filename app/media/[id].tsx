@@ -1,8 +1,10 @@
+import { BorderRadius, Colors, Spacing, Typography } from '@/constants/theme';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MediaInteractionModal from '../components/MediaInteractionModal';
 import { Media } from '../services/Manhwa';
+
 const API_BASE_URL = 'http://192.168.1.135:3000';  
 
 export default function ManhwaDetail() {
@@ -40,7 +42,7 @@ export default function ManhwaDetail() {
     if (loading) {
         return (
             <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color="#3b82f6" />
+                <ActivityIndicator size="large" color={Colors.primary} />
             </View>
         );
     }
@@ -64,7 +66,7 @@ export default function ManhwaDetail() {
                     />
                 ) : (
                     <View style={styles.placeholder}>
-                        <Text>No Image</Text>
+                        <Text style={styles.placeholderText}>No Image</Text>
                     </View>
                 )}
             </View>
@@ -105,21 +107,22 @@ export default function ManhwaDetail() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
-        backgroundColor: '#fff',
+        padding: Spacing.md,
+        backgroundColor: Colors.background,
     },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: Colors.background,
     },
     imageContainer: {
         width: '100%',
         height: 300,
-        borderRadius: 12,
+        borderRadius: BorderRadius.md,
         overflow: 'hidden',
-        marginBottom: 16,
+        marginBottom: Spacing.md,
+        backgroundColor: Colors.surfaceVariant,
     },
     image: {
         width: '100%',
@@ -130,14 +133,18 @@ const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#e5e7eb',
+        backgroundColor: Colors.surfaceVariant,
+    },
+    placeholderText: {
+        color: Colors.textTertiary,
+        fontSize: 14,
     },
     actionButton: {
-        backgroundColor: '#3b82f6',
-        padding: 16,
-        borderRadius: 12,
+        backgroundColor: Colors.primary,
+        padding: Spacing.md,
+        borderRadius: BorderRadius.md,
         alignItems: 'center',
-        marginVertical: 16,
+        marginVertical: Spacing.md,
     },
     actionButtonText: {
         color: '#fff',
@@ -145,42 +152,37 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     mediaTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        color: '#1f2937',
-
+        ...Typography.h2,
+        marginBottom: Spacing.sm,
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        color: '#1f2937',
+        ...Typography.h2,
+        marginBottom: Spacing.sm,
     },
     type: {
         fontSize: 16,
-        color: '#6b7280',
-        marginBottom: 8,
+        color: Colors.textSecondary,
+        marginBottom: Spacing.sm,
     },
     genres: {
         fontSize: 14,
-        color: '#6b7280',
-        marginBottom: 8,
+        color: Colors.textSecondary,
+        marginBottom: Spacing.sm,
     },
     score: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#f59e0b',
-        marginBottom: 16,
+        color: Colors.warning,
+        marginBottom: Spacing.md,
     },
     description: {
         fontSize: 14,
-        color: '#4b5563',
+        color: Colors.textSecondary,
         lineHeight: 20,
-        marginTop: 16,
+        marginTop: Spacing.md,
     },
     errorText: {
         fontSize: 16,
-        color: '#ef4444',
+        color: Colors.error,
     },
 });

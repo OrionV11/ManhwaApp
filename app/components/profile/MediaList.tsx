@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
@@ -10,6 +11,8 @@ import {
   View,
 } from 'react-native';
 import { Media } from '../../services/Manhwa';
+
+
 
 type Props = {
   data: Media[];
@@ -65,7 +68,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 12,
     borderBottomWidth: 1,
-    borderColor: '#eee',
+    borderColor: Colors.background,
+    shadowColor: Colors.shadow
   },
   cover: {
     width: 55,
@@ -76,16 +80,17 @@ const styles = StyleSheet.create({
   coverPlaceholder: {
     width: 55,
     height: 80,
-    backgroundColor: '#eee',
+    backgroundColor: Colors.background,
     borderRadius: 4,
     marginRight: 12,
   },
   title: {
     fontWeight: '600',
     fontSize: 14,
+    color: '#fff'
   },
   meta: {
-    color: '#777',
+    color: '#fff',
     fontSize: 12,
   },
   empty: {
@@ -94,6 +99,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 10,
-    color: '#999',
+    color: '#fff',
   },
 });

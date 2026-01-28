@@ -1,3 +1,4 @@
+import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -109,7 +110,7 @@ const LoginSignup = () => {
               <TextInput
                 style={styles.textInput}
                 placeholder="Username"
-                placeholderTextColor="#999"
+                placeholderTextColor={Colors.textTertiary}
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
@@ -124,7 +125,7 @@ const LoginSignup = () => {
             <TextInput
               style={styles.textInput}
               placeholder="Email"
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.textTertiary}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
@@ -140,7 +141,7 @@ const LoginSignup = () => {
             <TextInput
               style={styles.textInput}
               placeholder="Password"
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.textTertiary}
               secureTextEntry
               autoComplete="password"
               value={password}
@@ -211,12 +212,12 @@ const LoginSignup = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    padding: 20,
+    padding: Spacing.lg,
   },
   header: {
     alignItems: "center",
@@ -225,70 +226,76 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#333",
+    color: Colors.text,
   },
   underline: {
     width: 60,
     height: 4,
-    backgroundColor: "#4c00b4",
-    marginTop: 8,
+    backgroundColor: Colors.primary,
+    marginTop: Spacing.sm,
     borderRadius: 2,
   },
   inputs: {
-    gap: 20,
+    gap: Spacing.lg,
   },
   input: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f2f2f2",
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.sm + 2,
+    paddingHorizontal: Spacing.md,
     height: 55,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   icon: {
     width: 22,
     height: 22,
-    marginRight: 10,
+    marginRight: Spacing.sm + 2,
     resizeMode: "contain",
+    tintColor: Colors.textSecondary,
   },
   textInput: {
     flex: 1,
     fontSize: 16,
-    color: "#000",
+    color: Colors.text,
   },
   forgotPassword: {
-    marginTop: 10,
-    color: "#555",
+    marginTop: Spacing.sm + 2,
+    color: Colors.textSecondary,
     fontSize: 14,
   },
   link: {
-    color: "#4c00b4",
+    color: Colors.primary,
     fontWeight: "600",
   },
   submitContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 30,
-    gap: 10,
+    marginTop: Spacing.xl - 2,
+    gap: Spacing.sm + 2,
   },
   submit: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: BorderRadius.sm + 2,
     alignItems: "center",
   },
   submitActive: {
-    backgroundColor: "#4c00b4",
+    backgroundColor: Colors.primary,
   },
   submitInactive: {
-    backgroundColor: "#e0e0e0",
+    backgroundColor: Colors.surfaceVariant,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   submitText: {
     fontSize: 16,
     fontWeight: "600",
+    color: '#fff',
   },
   submitTextInactive: {
-    color: "#666",
+    color: Colors.textSecondary,
   },
 });
 

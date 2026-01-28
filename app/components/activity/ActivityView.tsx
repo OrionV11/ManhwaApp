@@ -1,3 +1,4 @@
+import { Colors, Spacing } from '@/constants/theme';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { User } from '../../services/Manhwa';
@@ -31,9 +32,6 @@ export default function ActivityView({ user }: Props) {
   const [tab, setTab] = useState<'You' | 'Friends'>('You');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
-
-
-
 
   // Fetch activities when tab changes
   useEffect(() => {
@@ -99,7 +97,7 @@ export default function ActivityView({ user }: Props) {
           
       } else if (tab === 'Friends') {
         // Fetch friends' activities from feed endpoint
-        const data = await api.get<Activity[]>(`/api/activity/feed`);  // ✅ No user_id needed
+        const data = await api.get<Activity[]>(`/api/activity/feed`);
         setActivities(data);
       }
 
@@ -148,32 +146,32 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 50,
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.background,
   },
   tabs: { 
     flexDirection: 'row', 
     borderBottomWidth: 1, 
-    borderColor: '#eee',
-    backgroundColor: '#fff'
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
   },
   tab: { 
     flex: 1, 
-    padding: 12, 
-    alignItems: 'center' 
+    padding: Spacing.sm + 4, 
+    alignItems: 'center',
   },
   tabActive: { 
     borderBottomWidth: 2, 
-    borderColor: '#4c00b4' 
+    borderColor: Colors.primary,
   },
   tabText: { 
-    color: '#999',
+    color: Colors.textSecondary,
     fontSize: 14,
-    fontWeight: '500'
+    fontWeight: '500',
   },
   tabTextActive: { 
-    color: '#4c00b4', 
+    color: Colors.primary, 
     fontWeight: '700',
-    fontSize: 14
+    fontSize: 14,
   },
   scrollView: {
     flex: 1,
