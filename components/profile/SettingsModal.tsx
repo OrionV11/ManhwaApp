@@ -1,5 +1,5 @@
-import { User } from '@/app/services/Manhwa';
 import { BorderRadius, Colors, Spacing } from '@/constants/theme';
+import { User } from '@/services/Manhwa';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
