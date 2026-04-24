@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const user_icon = require('../../assets/images/person.png');
 const password_icon = require('../../assets/images/hide.png');

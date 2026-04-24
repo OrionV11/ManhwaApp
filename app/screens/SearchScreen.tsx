@@ -15,8 +15,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../utils/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/utils/api';
 
 const API_BASE_URL = 'http://192.168.1.135:3000';
 

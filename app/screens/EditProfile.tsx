@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const EditProfileScreen = () => {
   const { user, updateProfile } = useAuth();

@@ -2,8 +2,8 @@ import { BorderRadius, Colors, Spacing, Typography } from '@/constants/theme';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import MediaInteractionModal from '../components/MediaInteractionModal';
-import { Media } from '../services/Manhwa';
+import MediaInteractionModal from '@/components/MediaInteractionModal';
+import { Media } from '@/services/Manhwa';
 
 const API_BASE_URL = 'http://192.168.1.135:3000';  
 

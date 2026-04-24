@@ -11,10 +11,10 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import MediaList from '../components/profile/MediaList';
-import { useAuth } from '../contexts/AuthContext';
-import { Media } from '../services/Manhwa';
-import { api, ApiError } from '../utils/api';
+import MediaList from '@/components/profile/MediaList';
+import { useAuth } from '@/contexts/AuthContext';
+import { Media } from '@/services/Manhwa';
+import { api, ApiError } from '@/utils/api';
 
 
 type Props = {

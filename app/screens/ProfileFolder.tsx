@@ -13,8 +13,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
-import { api, ApiError } from '../utils/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { api, ApiError } from '@/utils/api';
 
 
 interface Folder {

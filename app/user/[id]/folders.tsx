@@ -1,19 +1,18 @@
 // app/user/[id]/folders.tsx
-
+import { api, ApiError } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useGlobalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { api, ApiError } from '../../utils/api';
 
 type Folder = {
   id: number;
@@ -27,14 +26,18 @@ type Folder = {
 };
 
 export default function UserFoldersScreen() {
-  const { id } = useLocalSearchParams();
+  const { id } = useGlobalSearchParams<{ id: string }>();
   const router = useRouter();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+  console.log('User ID param:', id);
+  // Only fetch when id is a real value
+  if (id && id !== '[id]') {
     fetchFolders();
-  }, [id]);
+  }
+}, [id]);
 
   const fetchFolders = async () => {
     setLoading(true);
@@ -52,8 +55,8 @@ export default function UserFoldersScreen() {
   };
 
   const handleFolderPress = (folderId: number) => {
-    router.push(`/user/${id}/folder/${folderId}`);
-  };
+  router.push(`/folders/${folderId}`);
+};
 
   const renderFolder = ({ item }: { item: Folder }) => (
     <TouchableOpacity

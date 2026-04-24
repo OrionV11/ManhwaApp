@@ -12,6 +12,22 @@ import SettingsModal from './SettingsModal';
 
 type TabType = 'reading' | 'completed' | 'favorites' | 'reviews';
 
+// FIX 1: Added Review type
+type Review = {
+  id: number;
+  media: {
+    id: number;
+    cover_image?: string;
+    title_english?: string;
+    title_romaji?: string;
+    type?: string;
+  };
+  content: string;
+  rating?: number;
+  created_at: string;
+  likes_count?: number;
+};
+
 type Stats = {
   stats: {
     reading_progress: number;
@@ -21,7 +37,6 @@ type Stats = {
     reviews: number;
     followers_count: number;
     following_count: number;
-  
   };
 };
 
@@ -32,23 +47,26 @@ type Props = {
 
 export default function ProfileView({ user, label }: Props) {
   const [tab, setTab] = useState<TabType>('reading');
-  const [list, setList] = useState<Media[]>([]);
+  // FIX 2: Typed list to hold both Media and Review items
+  const [list, setList] = useState<(Media | Review)[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settingsVisible, setSettingsVisible] = useState(false);
-  
+
   const router = useRouter();
   const { user: authUser, isAuthenticated } = useAuth();
 
+  const isOwnProfile = authUser?.id === user.id;
+
   useEffect(() => {
     fetchStats();
-  }, [user.id]);
+  }, [user.id]); // FIX 3: Depend on user.id (primitive), not user object
 
   useEffect(() => {
     fetchTab(tab);
-  }, [tab]);
+  }, [tab, user.id]); // FIX 4: Re-fetch when user changes too
 
   const handleMediaClick = (mediaId: number) => {
     router.push(`/media/${mediaId}`);
@@ -57,7 +75,9 @@ export default function ProfileView({ user, label }: Props) {
   const fetchStats = async () => {
     setStatsLoading(true);
     try {
-      const data = await api.get<Stats>(`/api/stats/me`);
+      // FIX 5: Use correct endpoint based on whose profile this is
+      const endpoint = isOwnProfile ? `/api/stats/me` : `/api/stats/${user.id}`;
+      const data = await api.get<Stats>(endpoint);
       setStats(data);
     } catch (err) {
       console.error('Error fetching stats:', err);
@@ -83,18 +103,24 @@ export default function ProfileView({ user, label }: Props) {
   const fetchTab = async (tabName: TabType) => {
     setLoading(true);
     setError(null);
-    
-    const urlMap: Record<TabType, string> = {
+
+    // FIX 6: Use correct endpoints based on whose profile this is
+    const urlMap: Record<TabType, string> = isOwnProfile ? {
       favorites: `/api/favorites/me`,
       completed: `/api/reading-progress/completed/me`,
       reading: `/api/reading-progress/me`,
       reviews: `/api/reviews/me`,
+    } : {
+      favorites: `/api/favorites/${user.id}`,
+      completed: `/api/reading-progress/completed/${user.id}`,
+      reading: `/api/reading-progress/${user.id}`,
+      reviews: `/api/reviews/user/${user.id}`,
     };
 
     const url = urlMap[tabName];
 
     try {
-      const data = await api.get<Media[]>(url);
+      const data = await api.get<(Media | Review)[]>(url);
       setList(data);
     } catch (err) {
       console.error(`Error fetching ${tabName}:`, err);
@@ -106,16 +132,21 @@ export default function ProfileView({ user, label }: Props) {
     }
   };
 
-  const handleViewFollowers = () => {
-  router.push(`/user/${user.id}/followers`);
-};
+  // FIX 7: Clear list when switching tabs to prevent stale data reaching ReviewList
+  const handleTabChange = (newTab: TabType) => {
+    setList([]);
+    setTab(newTab);
+  };
 
-const handleViewFollowing = () => {
-  router.push(`/user/${user.id}/following`);
-};
+  const handleViewFollowers = () => {
+    router.push(`/user/${user.id}/followers`);
+  };
+
+  const handleViewFollowing = () => {
+    router.push(`/user/${user.id}/following`);
+  };
 
   const tabs: TabType[] = ['reading', 'completed', 'favorites', 'reviews'];
-  const isOwnProfile = authUser?.id === user.id;
 
   if (statsLoading && !stats) {
     return (
@@ -136,34 +167,35 @@ const handleViewFollowing = () => {
 
         {/* Stats */}
         <View style={styles.stats}>
-  <TouchableOpacity 
-    style={styles.statBox} 
-    onPress={handleViewFollowers}
-  >
-    <Text style={styles.statValue}>{stats?.stats?.followers_count || 0}</Text>
-    <Text style={styles.statLabel}>Followers</Text>
-  </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.statBox}
+            onPress={handleViewFollowers}
+          >
+            <Text style={styles.statValue}>{stats?.stats?.followers_count || 0}</Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </TouchableOpacity>
 
-  <TouchableOpacity 
-    style={styles.statBox} 
-    onPress={handleViewFollowing}
-  >
-    <Text style={styles.statValue}>{stats?.stats?.following_count || 0}</Text>
-    <Text style={styles.statLabel}>Following</Text>
-  </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.statBox}
+            onPress={handleViewFollowing}
+          >
+            <Text style={styles.statValue}>{stats?.stats?.following_count || 0}</Text>
+            <Text style={styles.statLabel}>Following</Text>
+          </TouchableOpacity>
 
-  <Stat label="Reading" value={stats?.stats?.reading_progress || 0} />
-  <Stat label="Completed" value={stats?.stats?.completed || 0} />
-  <Stat label="Favorites" value={stats?.stats?.fav_count || 0} />
-  <Stat label="Reviews" value={stats?.stats?.reviews || 0} />
-</View>
+          <Stat label="Reading" value={stats?.stats?.reading_progress || 0} />
+          <Stat label="Completed" value={stats?.stats?.completed || 0} />
+          <Stat label="Favorites" value={stats?.stats?.fav_count || 0} />
+          <Stat label="Reviews" value={stats?.stats?.reviews || 0} />
+        </View>
 
         {/* Tabs */}
         <View style={styles.tabs}>
           {tabs.map(t => (
             <TouchableOpacity
               key={t}
-              onPress={() => setTab(t)}
+              // FIX 8: Use handleTabChange instead of setTab directly
+              onPress={() => handleTabChange(t)}
               style={[styles.tab, tab === t && styles.tabActive]}
             >
               <Text style={tab === t ? styles.tabTextActive : styles.tabText}>
@@ -184,22 +216,23 @@ const handleViewFollowing = () => {
         </View>
       )}
 
-      {/* Content - Each list handles its own scrolling */}
+      {/* Content */}
       {!error && (
         <>
           {tab !== 'reviews' && (
             <MediaList
-              data={list}
+              data={list as Media[]}
               loading={loading}
               tab={tab}
               onMediaClick={handleMediaClick}
             />
           )}
-                  
+
           {tab === 'reviews' && (
-            <ReviewsList 
-              data={list as any} 
-              loading={loading} 
+            // FIX 9: Removed `as any` cast, now properly typed
+            <ReviewsList
+              data={list as Review[]}
+              loading={loading}
               tab="reviews"
               userId={isOwnProfile ? user.id : undefined}
               onRefresh={() => fetchTab('reviews')}
@@ -210,7 +243,7 @@ const handleViewFollowing = () => {
 
       {/* Floating Settings Button - Only show for own profile */}
       {isOwnProfile && (
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.floatingSettingsButton}
           onPress={() => setSettingsVisible(true)}
         >

@@ -4,17 +4,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
-import { api, ApiError } from '../utils/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { api, ApiError } from '@/utils/api';
 
 type UserProfile = {
   id: number;
@@ -52,7 +52,7 @@ export default function UserProfileScreen() {
     try {
       const data = await api.get<UserProfile>(
         `/api/users/${id}/profile`,
-        false  // Public endpoint, no auth required
+        true  
       );
       console.log(' Profile data received: ', JSON.stringify(data, null, 2));
       setProfile(data);
@@ -75,7 +75,7 @@ export default function UserProfileScreen() {
 
     setFollowLoading(true);
     try {
-      if (profile?.is_following) {
+      if (profile?.is_following === true) {
         await api.delete(`/api/users/${id}/follow`);
         Alert.alert('Success', 'Unfollowed user');
       } else {

@@ -38,6 +38,17 @@ def add_review(db: Session, user_id: int, media_id: int, content: str,
     db.add(review)
     db.commit()
     db.refresh(review)
+
+    from models import UserActivity
+    activity = UserActivity(
+        user_id=user_id,
+        media_id=media_id,
+        activity_type="REVIEWED",
+        details=f"Rated {rating}/10" if rating else None
+    )
+
+    db.add(activity)
+    db.commit()
     
     return {
         "message": "Review added",
@@ -90,6 +101,13 @@ def remove_review(db: Session, review_id: int, user_id: int) -> Dict:
     
     if review.user_id != user_id:
         raise ValueError("You can only delete your own reviews")
+
+    from models import UserActivity
+    db.query(UserActivity).filter(
+        UserActivity.user_id == user_id,
+        UserActivity.media_id == review.media_id,
+        UserActivity.activity_type == "REVIEWED"
+    ).delete()
 
     db.delete(review)
     db.commit()

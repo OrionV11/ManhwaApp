@@ -103,7 +103,7 @@ export default function ReviewList({ data, loading, userId, onRefresh }: Props) 
   return (
     <FlatList
       data={data}
-      keyExtractor={(item) => String(item.id)}
+      keyExtractor={(item, index) => item.id != null ? String(item.id) : `review-${index}`}
       contentContainerStyle={styles.listContainer}
       renderItem={({ item }) => (
         <View style={styles.reviewCard}>

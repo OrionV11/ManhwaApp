@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import ProfileView from '../components/profile/ProfileView';
-import { useAuth } from '../contexts/AuthContext';
+import ProfileView from '@/components/profile/ProfileView';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProfileScreen() {
   const { user, loading } = useAuth();

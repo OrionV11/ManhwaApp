@@ -59,15 +59,16 @@ def get_user_folders(db: Session, user_id: int) -> List[Dict]:
     return result
 
 
-def get_folder_by_id(db: Session, folder_id: int, user_id: int) -> Dict:
-    """Get a specific folder with all its items"""
-    folder = db.query(Folder).filter(
-        Folder.id == folder_id,
-        Folder.user_id == user_id
-    ).first()
+def get_folder_by_id(db: Session, folder_id: int, user_id: Optional[int]) -> Dict:
+    # First find the folder
+    folder = db.query(Folder).filter(Folder.id == folder_id).first()
     
     if not folder:
-        raise ValueError(f"Folder with id {folder_id} not found or access denied")
+        raise ValueError(f"Folder with id {folder_id} not found")
+    
+    # Allow access if: owner OR public folder
+    if folder.user_id != user_id and not folder.is_public:
+        raise ValueError(f"Access denied")
     
     items = db.query(FolderItem).filter(FolderItem.folder_id == folder_id).all()
     

@@ -192,58 +192,7 @@ async def delete_my_account(
 
 # backend/routes/users.py
 
-@router.get("/users/{user_id}/profile")
-async def get_user_profile(
-    user_id: int,
-    current_user_id: Optional[int] = Depends(get_optional_current_user_id),
-    db: Session = Depends(get_db)
-):
-    """Get user profile with stats"""
-    
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Make sure these queries are working
-    followers_count = db.query(UserFollow).filter(
-        UserFollow.following_id == user_id
-    ).count()
-    
-    following_count = db.query(UserFollow).filter(
-        UserFollow.follower_id == user_id
-    ).count()
-    
-    reviews_count = db.query(Review).filter(
-        Review.user_id == user_id
-    ).count()
-    
-    favorites_count = db.query(MediaLike).filter(
-        MediaLike.user_id == user_id
-    ).count()
-    
-    is_following = False
-    if current_user_id and current_user_id != user_id:
-        follow = db.query(UserFollow).filter(
-            UserFollow.follower_id == current_user_id,
-            UserFollow.following_id == user_id
-        ).first()
-        is_following = follow is not None
-    
-    return {
-        "id": user.id,
-        "username": user.username,
-        "bio": user.bio,
-        "profile_picture": user.profile_picture,
-        "created_at": user.created_at.isoformat() if user.created_at else None,
-        "updated_at": user.updated_at.isoformat() if user.updated_at else None,
-        "stats": {  
-            "followers_count": followers_count,
-            "following_count": following_count,
-            "reviews_count": reviews_count,
-            "favorites_count": favorites_count,
-        },
-        "is_following": is_following if current_user_id else None,
-    }
+
 @router.get("/users/{user_id}/folders")
 async def get_user_folders(
     user_id: int,

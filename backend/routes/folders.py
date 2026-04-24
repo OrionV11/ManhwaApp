@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import List, Optional
 from typing import List
 from dependencies import get_current_user_id, get_optional_current_user_id
 from database import get_db
@@ -92,7 +93,7 @@ def get_user_folders(
 @router.get("/{folder_id}", response_model=dict)
 def get_folder(
     folder_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: Optional[int] = Depends(get_optional_current_user_id),  # ← allows public access
     db: Session = Depends(get_db)
 ):
     """Get a specific folder with all its items"""

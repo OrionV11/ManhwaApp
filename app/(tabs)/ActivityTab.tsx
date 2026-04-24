@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import ActivityView from '../components/activity/ActivityView';
-import { useAuth } from '../contexts/AuthContext';
+import ActivityView from '@/components/activity/ActivityView';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ActivityScreen() {
   const { user, loading, isAuthenticated } = useAuth();
