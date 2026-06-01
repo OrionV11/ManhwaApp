@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/utils/api';
 
-const API_BASE_URL = 'http://192.168.1.135:3000';
+const API_BASE_URL = 'http://192.168.1.135:8000';
 
 interface Media {
   id: number;

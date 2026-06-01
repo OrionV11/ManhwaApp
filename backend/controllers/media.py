@@ -62,8 +62,7 @@ def search_media(db: Session, query: str, type: Optional[str] = None, genre: Opt
 def get_trending_media(db: Session, limit: int = 10) -> List[dict]:
     """Get trending media ordered by popularity and score"""
     results = db.query(Media)\
-        .filter(Media.average_score.isnot(None))\
-        .order_by(Media.popularity.desc(), Media.average_score.desc())\
+        .order_by(Media.popularity.desc())\
         .limit(limit)\
         .all()
     return [media_to_dict(m) for m in results]

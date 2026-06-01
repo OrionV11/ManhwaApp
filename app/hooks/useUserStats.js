@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_BASE_URL = 'http://192.168.1.135:3000';
+const API_BASE_URL = 'http://192.168.1.135:8000';
 
 export default function useUserStats(userId) {
   const [stats, setStats] = useState(null);

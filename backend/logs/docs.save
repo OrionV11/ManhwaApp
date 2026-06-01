@@ -1,0 +1,38 @@
+Search Queries
+Content viewed
+account changes
+account creation
+
+
+failed queries
+unusual queries patterns
+connection failures
+
+failed api calls
+rate limit hits
+unexpexted responses
+
+file uploads
+large data requests
+repeated requests
+
+multiple accounts same IP
+Impossible travel
+token failures
+admin access attemps
+
+order:
+auth.log
+error.log
+api.log
+security.log 
+activity.log
+database.log
+
+security.log:
+-5+ failed logins same IP
+-SQL injection patterns in inputs
+-XSS attempts in form fields
+-Accessing routes that don't exist repeatedly
+-Requests with weird user agents
+

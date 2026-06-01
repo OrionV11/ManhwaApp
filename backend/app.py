@@ -6,6 +6,7 @@ import hashlib
 import base64
 import os
 from dotenv import load_dotenv
+from logger import auth_logger, api_logger, error_logger
 
 load_dotenv()
 
@@ -19,7 +20,7 @@ app.config['SESSION_TYPE'] = 'filesystem'
 CORS(app, supports_credentials=True)
 
 CLIENT_ID = os.getenv('CLIENT_ID')
-REDIRECT_URI = "http://localhost:5000/auth/callback"
+REDIRECT_URI = "http://192.168.1.135:8000/auth/callback"
 
 def generate_pkce():
     """Generate PKCE code verifier and challenge"""
@@ -42,6 +43,12 @@ def login():
     session['code_verifier'] = code_verifier
     session['state'] = state
     
+
+    #if login_failed:
+       #auth_logger.warning(f'Failed login | user={username} | ip={ip}')
+    #else:
+        #auth_logger.info(f'Successful login | user={username} | ip={ip}')
+
     # Build auth URL
     auth_url = f"https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id={CLIENT_ID}&code_challenge={code_challenge}&state={state}"
     
@@ -139,4 +146,4 @@ def get_manga(manga_id):
     return jsonify(response.json())
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, port=5000)

@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from passlib.context import CryptContext
 
 from database import Base, engine
 from routes.media import router as media_router
@@ -23,7 +22,6 @@ app = FastAPI(title="Manhwa App API")
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # CORS middleware
 app.add_middleware(

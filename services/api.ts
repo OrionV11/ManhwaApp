@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { LoginResponse, Media } from './Manhwa';
 
-const API_BASE_URL = 'http://192.168.1.135:3000';
+const API_BASE_URL = 'http://192.168.1.135:8000';
 
 export class ApiError extends Error {
   status: number;
