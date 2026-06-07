@@ -1,20 +1,27 @@
 # routes/media.py
 
-from fastapi import APIRouter, HTTPException, Query, Depends, status
+from fastapi import APIRouter, Request, HTTPException, Query, Depends, status
 from sqlalchemy.orm import Session
 from sqlalchemy import extract, or_
 from typing import Optional, List
 
+from logger import api_logger, error_logger
+
 from database import get_db
 from models import Media
 from controllers.media import media_to_dict, search_media, get_trending_media, get_media_by_id
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(prefix="/media", tags=["media"])
 
 
 # -------------------- SEARCH --------------------
 @router.get("/search")
-def search(
+@limiter.limit("30/minute")
+def search(request: Request, 
     query: str = Query(..., min_length=1),
     type: Optional[str] = None,
     genre: Optional[str] = None,
@@ -22,24 +29,30 @@ def search(
 ):
     try:
         results = search_media(db, query, type, genre)
+        api_logger.info(f"Search | query={query} | results={len(results)}")
         return results
     except Exception as e:
+        error_logger.error(f"Search failed |query={query} | error={e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server error")
 
 
 # -------------------- TRENDING --------------------
 @router.get("/trending")
-def trending(db: Session = Depends(get_db), limit: int = Query(10, ge=1, le=100)):
+@limiter.limit("60/minute")
+def trending(request: Request, db: Session = Depends(get_db), limit: int = Query(10, ge=1, le=100)):
     try:
         results = get_trending_media(db, limit)
+        api_logger.info(f"Trending requests | limit={limit} | results={len(results)}")
         return results
     except Exception as e:
+        error_logger.error(f"Trending failed | error={e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server error")
 
 
 # -------------------- FILTERING --------------------
 @router.get("/filtering")
-def filtering(
+@limiter.limit("60/minute")
+def filtering(request: Request, 
     types: Optional[str] = Query(None),
     genres: Optional[str] = Query(None),
     statuses: Optional[str] = Query(None),
@@ -93,10 +106,13 @@ def filtering(
 def get_media(media_id: int, db: Session = Depends(get_db)):
     try:
         media_obj = get_media_by_id(db, media_id)
+        api_logger.info(f"Media fetch | id={media_id}")
         return media_obj
     except ValueError as e:
+        error_logger.error(f"Media not found | id={media_id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
+        error_logger.error(f"Media fetch failed | id={media_id} | error={e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server error")
 
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Request, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -8,7 +8,13 @@ from models import User, Review, Media
 from auth import get_current_user
 from controllers import userreview as user_reviews
 from dependencies import get_current_user_id
+from datetime import datetime
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
+limiter = Limiter(key_func=get_remote_address)
+
+from logger import api_logger, error_logger
 
 router = APIRouter(
     prefix="/reviews",
@@ -24,82 +30,51 @@ class ReviewCreate(BaseModel):
     title: Optional[str] = ""
 
 @router.post("")
-async def create_review(
+@limiter.limit("10/minute")
+async def create_review(request: Request, 
     review_data: ReviewCreate,  # Use Pydantic model instead of dict
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Create review - user_id comes from JWT token, NOT from request body"""
+    try:
+        # Check if user already reviewed this media
+        existing_review = db.query(Review).filter(
+            Review.user_id == current_user.id,
+            Review.media_id == review_data.media_id
+        ).first()
     
-    print(f"Creating review for user {current_user.id}, media {review_data.media_id}")
+        if existing_review:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You have already reviewed this media"
+            )
     
-    # Check if user already reviewed this media
-    existing_review = db.query(Review).filter(
-        Review.user_id == current_user.id,
-        Review.media_id == review_data.media_id
-    ).first()
-    
-    if existing_review:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You have already reviewed this media"
+        # Create review with user_id from token
+        review = Review(
+            user_id=current_user.id,  #From token, not request body!
+            media_id=review_data.media_id,
+            content=review_data.content,
+            rating=review_data.rating,
+            title=review_data.title or ""
         )
     
-    # Create review with user_id from token
-    review = Review(
-        user_id=current_user.id,  # ✅ From token, not request body!
-        media_id=review_data.media_id,
-        content=review_data.content,
-        rating=review_data.rating,
-        title=review_data.title or ""
-    )
+        db.add(review)
+        db.commit()
+        db.refresh(review)
     
-    db.add(review)
-    db.commit()
-    db.refresh(review)
-    
-    # Return full review with media info
-    media = db.query(Media).filter(Media.id == review.media_id).first()
-    
-    return {
-        "review_id": review.id,
-        "user_id": review.user_id,
-        "media_id": review.media_id,
-        "rating": review.rating,
-        "content": review.content,
-        "title": review.title,
-        "created_at": review.created_at.isoformat(),
-        "media": {
-            "id": media.id,
-            "title_english": media.title_english,
-            "title_romaji": media.title_romaji,
-            "cover_image": media.cover_image,
-            "type": media.type,
-        } if media else None
-    }
-
-@router.get("/me")  
-async def get_my_reviews(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get authenticated user's reviews"""
-    
-    reviews = db.query(Review).filter(
-        Review.user_id == current_user.id
-    ).all()
-    
-    result = []
-    for review in reviews:
+        # Return full review with media info
         media = db.query(Media).filter(Media.id == review.media_id).first()
-        result.append({
+    
+        api_logger.info(f"Review created successfully | user={current_user.id} | media={review_data.media_id}")
+        return {
             "review_id": review.id,
+            "user_id": review.user_id,
             "media_id": review.media_id,
             "rating": review.rating,
             "content": review.content,
             "title": review.title,
             "created_at": review.created_at.isoformat(),
-            "likes_count": getattr(review, 'likes_count', 0),
             "media": {
                 "id": media.id,
                 "title_english": media.title_english,
@@ -107,9 +82,50 @@ async def get_my_reviews(
                 "cover_image": media.cover_image,
                 "type": media.type,
             } if media else None
-        })
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_logger.error(f"Fetch reviews failed | user={current_user.id} | error={e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) 
+
+@router.get("/me")  
+async def get_my_reviews(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get authenticated user's reviews"""
+    try:
+        reviews = db.query(Review).filter(
+            Review.user_id == current_user.id
+        ).all()
     
-    return result
+        result = []
+        for review in reviews:
+            media = db.query(Media).filter(Media.id == review.media_id).first()
+            result.append({
+                "review_id": review.id,
+                "media_id": review.media_id,
+                "rating": review.rating,
+                "content": review.content,
+                "title": review.title,
+                "created_at": review.created_at.isoformat(),
+                "likes_count": getattr(review, 'likes_count', 0),
+                "media": {
+                    "id": media.id,
+                    "title_english": media.title_english,
+                    "title_romaji": media.title_romaji,
+                    "cover_image": media.cover_image,
+                    "type": media.type,
+                 } if media else None
+            })
+    
+        return result
+
+    except Exception as e:
+        error_logger.error(f"Fetch reviews failed | user={current_user.id} | error={e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 
 @router.delete("/{review_id}")
 async def delete_review(
@@ -118,10 +134,10 @@ async def delete_review(
     db: Session = Depends(get_db)
 ):
     """Delete review - users can only delete their own reviews"""
-    
     review = db.query(Review).filter(Review.id == review_id).first()
     
     if not review:
+        error_logger.error(f"review not found | user={current_user.id} | review={review_id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Review not found"
@@ -129,6 +145,7 @@ async def delete_review(
     
     # Security check: user can only delete their own reviews
     if review.user_id != current_user.id:
+        error_logger.warning(f"Can't delete review you don't own | user={current_user.id} | review={review_id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only delete your own reviews"
@@ -137,6 +154,7 @@ async def delete_review(
     db.delete(review)
     db.commit()
     
+    api_logger.info(f"Review deleted successfully | user={current_user.id} | review={review_id}")
     return {"message": "Review deleted successfully"}
 
 @router.put("/{review_id}")
@@ -172,6 +190,7 @@ async def update_review(
     db.commit()
     db.refresh(review)
     
+    api_logger.info(f"Review updated | user={current_user.id} | review={review_id}")
     return {"message": "Review updated successfully"}
 
 # -------------------------
@@ -181,32 +200,28 @@ async def update_review(
 @router.post("/{review_id}/like", status_code=status.HTTP_200_OK)
 def like_review(
     review_id: int,
-    user_id: int = Depends(get_current_user_id),  # TODO: Replace with authenticated user from token
+    user_id: int = Depends(get_current_user_id),  
     db: Session = Depends(get_db)
 ):
     """Like a review"""
     try:
-        return user_reviews.add_review_like(
-            db=db,
-            user_id=user_id,
-            review_id=review_id
-        )
+        result = user_reviews.add_review_like(db=db, user_id=user_id, review_id=review_id)
+        api_logger.info(f"Review liked | user={user_id} | review={review_id}")
+        return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.delete("/{review_id}/like", status_code=status.HTTP_200_OK)
 def unlike_review(
     review_id: int,
-    user_id: int = Depends(get_current_user_id),  # TODO: Replace with authenticated user from token
+    user_id: int = Depends(get_current_user_id),  
     db: Session = Depends(get_db)
 ):
     """Remove a like from a review"""
     try:
-        return user_reviews.remove_review_like(
-            db=db,
-            user_id=user_id,
-            review_id=review_id
-        )
+        result = user_reviews.remove_review_like(db=db, user_id=user_id, review_id=review_id)
+        api_logger.info(f"Review liked removed | user={user_id} | review={review_id}")
+        return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -222,15 +237,10 @@ def get_review_likes(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-
-
-
-
-
 @router.get("/{review_id}/liked")
 def check_user_liked_review(
     review_id: int,
-    user_id: int,  # TODO: Replace with authenticated user from token
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Check if the current user has liked a review"""

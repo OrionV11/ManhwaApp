@@ -1,0 +1,40 @@
+2026-06-07 14:06:37,783 | INFO | Trending requests | limit=10 | results=3
+2026-06-07 14:06:37,818 | INFO | Trending requests | limit=2 | results=2
+2026-06-07 14:06:37,860 | INFO | Trending requests | limit=10 | results=3
+2026-06-07 14:06:37,889 | INFO | Trending requests | limit=10 | results=0
+2026-06-07 14:06:37,930 | INFO | Search | query=Solo | results=1
+2026-06-07 14:06:37,973 | INFO | Search | query=a | results=0
+2026-06-07 14:06:38,005 | INFO | Search | query=zzznomatch | results=0
+2026-06-07 14:06:38,229 | INFO | Media fetch | id=1
+2026-06-07 14:06:38,293 | INFO | Media fetch | id=1
+2026-06-07 14:25:53,938 | INFO | User add media | user=1 | media=1
+2026-06-07 14:25:54,204 | INFO | User add media | user=1 | media=1
+2026-06-07 14:25:54,209 | INFO | User add media | user=1 | media=1
+2026-06-07 14:25:54,748 | INFO | User add media | user=1 | media=1
+2026-06-07 14:25:54,758 | INFO | Media removed | user=1 | media=1
+2026-06-07 14:25:55,016 | INFO | Media removed | user=1 | media=1
+2026-06-07 14:25:55,783 | INFO | User add media | user=1 | media=1
+2026-06-07 14:25:55,875 | INFO | Trending requests | limit=10 | results=3
+2026-06-07 14:25:55,919 | INFO | Trending requests | limit=2 | results=2
+2026-06-07 14:25:55,951 | INFO | Trending requests | limit=10 | results=3
+2026-06-07 14:25:55,979 | INFO | Trending requests | limit=10 | results=0
+2026-06-07 14:25:56,012 | INFO | Search | query=Solo | results=1
+2026-06-07 14:25:56,045 | INFO | Search | query=a | results=0
+2026-06-07 14:25:56,077 | INFO | Search | query=zzznomatch | results=0
+2026-06-07 14:25:56,318 | INFO | Media fetch | id=1
+2026-06-07 14:25:56,381 | INFO | Media fetch | id=1
+2026-06-07 14:25:56,635 | INFO | Review created successfully | user=1 | media=1
+2026-06-07 14:25:56,893 | INFO | Review created successfully | user=1 | media=1
+2026-06-07 14:25:57,681 | INFO | Review created successfully | user=1 | media=1
+2026-06-07 14:25:57,955 | INFO | Review created successfully | user=1 | media=1
+2026-06-07 14:25:57,964 | INFO | Review deleted successfully | user=1 | review=1
+2026-06-07 14:25:58,740 | INFO | Review created successfully | user=1 | media=1
+2026-06-07 14:25:58,996 | INFO | Review created successfully | user=1 | media=1
+2026-06-07 14:25:59,004 | INFO | Review updated | user=1 | review=1
+2026-06-07 14:25:59,461 | INFO | Review created successfully | user=1 | media=1
+2026-06-07 14:25:59,923 | INFO | Review created successfully | user=1 | media=1
+2026-06-07 14:25:59,931 | INFO | Review liked | user=2 | review=1
+2026-06-07 14:26:00,382 | INFO | Review created successfully | user=1 | media=1
+2026-06-07 14:26:00,391 | INFO | Review liked | user=2 | review=1
+2026-06-07 14:26:00,405 | INFO | Review liked removed | user=2 | review=1
+2026-06-07 14:26:00,692 | INFO | Review created successfully | user=1 | media=1

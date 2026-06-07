@@ -1,0 +1,46 @@
+2026-06-07 13:44:51,702 | INFO | New signup | user=test@test.com
+2026-06-07 13:44:51,956 | INFO | New signup | user=test@test.com
+2026-06-07 13:44:52,196 | INFO | New signup | user=test1@test.com
+2026-06-07 13:44:52,461 | INFO | New signup | user=test@test.com
+2026-06-07 13:44:52,650 | INFO | Successful login | user=test@test.com | ip=testclient
+2026-06-07 13:44:52,895 | INFO | New signup | user=test@test.com
+2026-06-07 13:44:53,088 | WARNING | Failed login - wrong password | user=test@test.com | ip=testclient
+2026-06-07 13:44:53,131 | WARNING | Failed login - user not found | email=nonexistent@test.com | ip=testclient
+2026-06-07 14:25:52,158 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:52,403 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:52,649 | INFO | New signup | user=test1@test.com
+2026-06-07 14:25:52,914 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:53,110 | INFO | Successful login | user=test@test.com | ip=testclient
+2026-06-07 14:25:53,353 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:53,546 | WARNING | Failed login - wrong password | user=test@test.com | ip=testclient
+2026-06-07 14:25:53,603 | WARNING | Failed login - user not found | email=nonexistent@test.com | ip=testclient
+2026-06-07 14:25:53,918 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:54,191 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:54,467 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:54,736 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:55,008 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:55,254 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:55,525 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:55,770 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:56,619 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:56,882 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:57,187 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:57,424 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:57,671 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:57,946 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:58,233 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:58,526 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:58,729 | INFO | New signup | user=test2@test.com
+2026-06-07 14:25:58,985 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:59,248 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:59,450 | INFO | New signup | user=test2@test.com
+2026-06-07 14:25:59,708 | INFO | New signup | user=test@test.com
+2026-06-07 14:25:59,912 | INFO | New signup | user=test2@test.com
+2026-06-07 14:26:00,166 | INFO | New signup | user=test@test.com
+2026-06-07 14:26:00,370 | INFO | New signup | user=test2@test.com
+2026-06-07 14:26:00,682 | INFO | New signup | user=test@test.com
+2026-06-07 14:43:50,512 | WARNING | Failed login - user not found | email=test@test.com | ip=192.168.1.135
+2026-06-07 14:43:50,518 | WARNING | Failed login - user not found | email=test@test.com | ip=192.168.1.135
+2026-06-07 14:43:50,523 | WARNING | Failed login - user not found | email=test@test.com | ip=192.168.1.135
+2026-06-07 14:43:50,528 | WARNING | Failed login - user not found | email=test@test.com | ip=192.168.1.135
+2026-06-07 14:43:50,536 | WARNING | Failed login - user not found | email=test@test.com | ip=192.168.1.135

@@ -1,6 +1,6 @@
 # backend/routes/auth.py
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 import bcrypt
@@ -9,19 +9,25 @@ from jose import jwt
 import os
 from dotenv import load_dotenv
 
+from logger import auth_logger, error_logger
 from database import get_db
 from models import User
+
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+
 
 load_dotenv()
 
 router = APIRouter()
 
-
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 
-# Request/Response Models
 class SignupRequest(BaseModel):
     username: str
     email: EmailStr
@@ -45,9 +51,6 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
-# Helper Functions
-import bcrypt
-
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -63,81 +66,88 @@ def create_access_token(user_id: int) -> str:
     }
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-# Routes
 @router.post("/auth/signup", response_model=TokenResponse)
-def signup(data: SignupRequest, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def signup(request: Request, data: SignupRequest, db: Session = Depends(get_db)):
     """Sign up a new user"""
-    
-    # Check if email already exists
-    existing_email = db.query(User).filter(User.email == data.email).first()
-    if existing_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+    try:
+        existing_email = db.query(User).filter(User.email == data.email).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+
+        existing_username = db.query(User).filter(User.username == data.username).first()
+        if existing_username:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken"
+            )
+
+        hashed_password = hash_password(data.password)
+        new_user = User(
+            username=data.username,
+            email=data.email,
+            hashed_password=hashed_password,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
-    
-    # Check if username already exists
-    existing_username = db.query(User).filter(User.username == data.username).first()
-    if existing_username:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already taken"
-        )
-    
-    # Create new user
-    hashed_password = hash_password(data.password)
-    new_user = User(
-        username=data.username,
-        email=data.email,
-        hashed_password=hashed_password,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
-    )
-    
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)  # Get the auto-generated ID
-    
-    # Create access token
-    token = create_access_token(new_user.id)
-    
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "user": {
-            "id": new_user.id,
-            "username": new_user.username,
-            "email": new_user.email,
-            "bio": new_user.bio,
-            "profile_picture": new_user.profile_picture,
-            "created_at": new_user.created_at.isoformat(),
-            "updated_at": new_user.updated_at.isoformat()
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        token = create_access_token(new_user.id)
+
+        auth_logger.info(f"New signup | user={data.email}")
+
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": {
+                "id": new_user.id,
+                "username": new_user.username,
+                "email": new_user.email,
+                "bio": new_user.bio,
+                "profile_picture": new_user.profile_picture,
+                "created_at": new_user.created_at.isoformat(),
+                "updated_at": new_user.updated_at.isoformat()
+            }
         }
-    }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_logger.error(f"Signup failed | user={data.email} | error={e}")
+        raise
 
 @router.post("/auth/login", response_model=TokenResponse)
-def login(data: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     """Log in an existing user"""
-    
-    # Find user by email
+    ip = request.client.host
+
     user = db.query(User).filter(User.email == data.email).first()
-    
+
     if not user:
+        auth_logger.warning(f"Failed login - user not found | email={data.email} | ip={ip}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
-    
-    # Verify password
+
     if not verify_password(data.password, user.hashed_password):
+        auth_logger.warning(f"Failed login - wrong password | user={data.email} | ip={ip}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
-    
-    # Create access token
+
+    auth_logger.info(f"Successful login | user={data.email} | ip={ip}")
+
     token = create_access_token(user.id)
-    
+
     return {
         "access_token": token,
         "token_type": "bearer",

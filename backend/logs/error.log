@@ -1,0 +1,6 @@
+2026-06-07 14:06:38,262 | ERROR | Media not found | id=99999
+2026-06-07 14:25:54,470 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-07 14:25:55,258 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-07 14:25:56,349 | ERROR | Media not found | id=99999
+2026-06-07 14:25:58,237 | ERROR | review not found | user=1 | review=99999
+2026-06-07 14:25:58,744 | WARNING | Can't delete review you don't own | user=2 | review=1

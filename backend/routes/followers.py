@@ -1,9 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Request, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
 from controllers import followers
 from dependencies import get_current_user_id
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+
+from logger import api_logger, error_logger
 
 router = APIRouter(
     prefix="/users",
@@ -22,19 +29,24 @@ class FollowRequest(BaseModel):
 # -------------------------
 
 @router.post("/follow", status_code=status.HTTP_200_OK)
-def follow_user(
+@limiter.limit("20/minute")
+def follow_user(request: Request, 
     follow_request: FollowRequest,  # Add this - get following_id from body
     follower_id: int = Depends(get_current_user_id),  # Current user (from token)
     db: Session = Depends(get_db)
 ):
     """Follow a user"""
     try:
-        return followers.follow_user(
+        result =  followers.follow_user(
             db=db,
             follower_id=follower_id,  # Current user
             following_id=follow_request.following_id  # User to follow
         )
+        
+        api_logger.info(f"Following user | follower={follower_id} | following={follow_request.following_id}")
+        return result
     except ValueError as e:
+        error_logger.error(f"Could not follow user | follower={follower_id} | following={follow_request.following_id}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.delete("/follow/{following_id}", status_code=status.HTTP_200_OK)  # Add following_id to path
@@ -45,12 +57,16 @@ def unfollow_user(
 ):
     """Unfollow a user"""
     try:
-        return followers.unfollow_user(
+        result =  followers.unfollow_user(
             db=db,
             follower_id=follower_id,
             following_id=following_id
         )
+        
+        api_logger.info(f"Unfollowed user | follower={follower_id} | following={following_id}")
+        return result
     except ValueError as e:
+        error_logger.error(f"Could not unfollow user | follower_id={follower_id} following_id={following_id}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 # -------------------------
@@ -66,7 +82,11 @@ def get_user_followers(
     try:
         return followers.get_followers(db=db, user_id=user_id)
     except ValueError as e:
+        error_logger.warning(f"Followers not found | user={user_id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        error_logger.error(f"Fetch followers failed | user={user_id} | error={e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.get("/following")
 def get_user_following(
@@ -77,7 +97,11 @@ def get_user_following(
     try:
         return followers.get_following(db=db, user_id=user_id)
     except ValueError as e:
+        error_logger.warning(f"Following not found | user={user_id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        error_logger.error(f"Fetch following failed | user={user_id} | error={e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 # -------------------------
 # Stats and Check Routes
@@ -92,6 +116,7 @@ def get_user_follower_stats(
     try:
         return followers.get_user_stats(db=db, user_id=user_id)
     except ValueError as e:
+        error_logger.warning(f"Stats not found | user_id={user_id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 @router.get("/is-following/{other_user_id}")
@@ -100,13 +125,18 @@ def check_is_following(
     user_id: int = Depends(get_current_user_id),  # Current user (from token)
     db: Session = Depends(get_db)
 ):
-    """Check if current user is following other_user_id"""
-    is_following = followers.is_following(
-        db=db,
-        follower_id=user_id,
-        following_id=other_user_id
-    )
-    return {"is_following": is_following}
+    try:
+        """Check if current user is following other_user_id"""
+        is_following = followers.is_following(
+            db=db,
+            follower_id=user_id,
+            following_id=other_user_id
+        )
+        return {"is_following": is_following}
+    except Exception as e:
+        error_logger.error(f"Check following failed | user={user_id} | other={other_user_id}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 
 @router.get("/mutual/{other_user_id}")
 def get_mutual_followers(
@@ -122,4 +152,8 @@ def get_mutual_followers(
             other_user_id=other_user_id
         )
     except ValueError as e:
+        error_logger.warning(f"Mutuals not found | user_id={user_id} | other_user_id={other_user_id}") 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        error_logger.error(f"Mutuals failed | user={user_id} | other={other_user_id}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

@@ -7,12 +7,14 @@ from database import get_db
 from models import User, UserFollow, Review, MediaLike, Media, Folder, FolderItem
 from dependencies import get_current_user_id, get_optional_current_user_id
 
+from logger import api_logger, error_logger
+
 router = APIRouter()
 
 @router.get("/users/search")
 async def search_users(
     q: str,
-    current_user_id: Optional[int] = Depends(get_optional_current_user_id),  # ✅ Optional auth
+    current_user_id: Optional[int] = Depends(get_optional_current_user_id),
     db: Session = Depends(get_db)
 ):
     """Search for users by username - public endpoint"""
@@ -187,7 +189,7 @@ async def delete_my_account(
     
     db.delete(user)
     db.commit()
-    
+    api_logger.info(f"Accound deleted | user={current_user_id}")
     return {"message": "Account deleted successfully"}
 
 # backend/routes/users.py
@@ -300,7 +302,7 @@ async def get_user_profile(
 @router.post("/users/{user_id}/follow")
 async def follow_user(
     user_id: int,
-    current_user_id: int = Depends(get_current_user_id),  # ✅ Change this
+    current_user_id: int = Depends(get_current_user_id), 
     db: Session = Depends(get_db)
 ):
     """Follow a user"""
@@ -329,14 +331,14 @@ async def follow_user(
     )
     db.add(follow)
     db.commit()
-    
+    api_logger.info(f"User followed | follower={current_user_id} | following={user_id}")
     return {"message": "Successfully followed user"}
 
 
 @router.delete("/users/{user_id}/follow")
 async def unfollow_user(
     user_id: int,
-    current_user_id: int = Depends(get_current_user_id),  # ✅ Change this
+    current_user_id: int = Depends(get_current_user_id), 
     db: Session = Depends(get_db)
 ):
     """Unfollow a user"""
@@ -352,5 +354,5 @@ async def unfollow_user(
     
     db.delete(follow)
     db.commit()
-    
+    api_logger.info(f"User unfollowed | follower={current_user_id} | following={user_id}")
     return {"message": "Successfully unfollowed user"}

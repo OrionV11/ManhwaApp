@@ -11,6 +11,8 @@ from schemas.folders import (
 )
 from controllers import folders as folder_controller
 
+from logger import api_logger, error_logger
+
 router = APIRouter(prefix="/folders", tags=["folders"])
 
 @router.get("/public")
@@ -70,14 +72,17 @@ def create_folder(
 ):
     """Create a new folder"""
     try:
-        return folder_controller.create_folder(
+        result = folder_controller.create_folder(
             db=db,
             user_id=user_id,
             title=folder.title,
             description=folder.description,
             is_public=folder.is_public
         )
+        api_logger.info(f"Folder created | user={user_id} | title={folder.title}")
+        return result
     except ValueError as e:
+        error_logger.error(f"Create folder failed | user={user_id} | error={e}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
@@ -136,12 +141,15 @@ def delete_folder(
 ):
     """Delete a folder"""
     try:
-        return folder_controller.delete_folder(
+        result = folder_controller.delete_folder(
             db=db,
             folder_id=folder_id,
             user_id=user_id
         )
+        api_logger.info(f"Folder deleted | user={user_id} | folder={folder_id}")
+        return result
     except ValueError as e:
+        error_logger.error(f"Deleted folder failed | user={user_id} | folder={folder_id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
@@ -154,14 +162,17 @@ def add_media_to_folder(
 ):
     """Add media to a folder"""
     try:
-        return folder_controller.add_media_to_folder(
+        result = folder_controller.add_media_to_folder(
             db=db,
             folder_id=folder_id,
             user_id=user_id,
             media_id=item.media_id,
             notes=item.notes
         )
+        api_logger.info(f"Media added to folder | user={user_id} | folder={folder_id}")
+        return result
     except ValueError as e:
+        error_logger.error(f"Add to folder failed | user={user_id} | folder={folder_id}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
@@ -174,13 +185,16 @@ def remove_media_from_folder(
 ):
     """Remove media from a folder"""
     try:
-        return folder_controller.remove_media_from_folder(
+        result = folder_controller.remove_media_from_folder(
             db=db,
             folder_id=folder_id,
             user_id=user_id,
             media_id=media_id
         )
+        api_logger.info(f"Media removed from folder | user={user_id} | folder={folder_id}")
+        return result
     except ValueError as e:
+        error_logger.error(f"Remove from folder failed | user={user_id} | folder={folder_id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
