@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from secure import Secure
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -21,6 +22,7 @@ from dependencies import get_current_user_id
 from routes.users import router as user_router
 from routes.auth import router as auth_router
 
+secure_headers = Secure()
 
 #Rate Limit
 limiter = Limiter(key_func=get_remote_address)
@@ -63,6 +65,18 @@ app.include_router(auth_router, prefix="/api")
 @app.get("/api/health")
 def health_check():
     return {"message": "Server is running", "status": "ok"}
+
+@app.middleware("http")
+async def set_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    return response
+
 
 if __name__ == "__main__":
     import uvicorn

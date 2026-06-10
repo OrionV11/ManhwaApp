@@ -39,6 +39,7 @@ python-dotenv==1.2.2
 python-jose==3.5.0
 requests==2.34.2
 rsa==4.9.1
+secure==2.0.1
 six==1.17.0
 slowapi==0.1.9
 SQLAlchemy==2.0.50
