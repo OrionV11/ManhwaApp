@@ -18,6 +18,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from utils.email import generate_otp, send_otp_email
+from utils.otp_store import store_otp, verify_otp
+
 SIGNUP_LIMIT = os.getenv("SIGNUP_RATE_LIMIT", "3/minute")
 LOGIN_LIMIT = os.getenv("LOGIN_RATE_LIMIT", "5/minute")
 
@@ -31,6 +34,18 @@ router = APIRouter()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+
+class OTPVerifyRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    otp: Optional[str] = None
 
 class SignupRequest(BaseModel):
     username: str
@@ -87,6 +102,63 @@ def create_access_token(user_id: int) -> str:
     }
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+@router.post("/auth/request-otp")
+@limiter.limit("3/minute")
+def request_otp(request: Request, data: OTPRequest, db: Session = Depends(get_db)):
+    """Send OTP to user email"""
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user:
+        # Don't reveal if email exists
+        return {"message": "If this email exists, an OTP has been sent"}
+    
+    otp = generate_otp()
+    store_otp(data.email, otp)
+    
+    sent = send_otp_email(data.email, otp)
+    if not sent:
+        error_logger.error(f"Failed to send OTP | email={data.email}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send OTP email"
+        )
+    
+    auth_logger.info(f"OTP sent | email={data.email}")
+    return {"message": "If this email exists, an OTP has been sent"}
+
+@router.post("/auth/verify-otp")
+@limiter.limit("5/minute")
+def verify_otp_route(request: Request, data: OTPVerifyRequest, db: Session = Depends(get_db)):
+    """Verify OTP and return token"""
+    if not verify_otp(data.email, data.otp):
+        auth_logger.warning(f"Invalid OTP | email={data.email}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired OTP"
+        )
+    
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    token = create_access_token(user.id)
+    auth_logger.info(f"OTP verified | email={data.email}")
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "bio": user.bio,
+            "profile_picture": user.profile_picture,
+            "created_at": user.created_at.isoformat(),
+            "updated_at": user.updated_at.isoformat()
+        }
+    }
 
 @router.post("/auth/signup", response_model=TokenResponse)
 @limiter.limit(SIGNUP_LIMIT)

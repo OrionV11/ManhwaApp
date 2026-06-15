@@ -246,3 +246,11 @@
 2026-06-15 15:51:50,798 | INFO | New signup | user=test@test.com
 2026-06-15 15:51:51,015 | INFO | New signup | user=test2@test.com
 2026-06-15 15:51:51,336 | INFO | New signup | user=test@test.com
+2026-06-15 16:31:27,206 | WARNING | Invalid OTP | email=finalend11@gmail.com
+2026-06-15 16:43:54,414 | WARNING | Invalid OTP | email=finalend11@gmail.com
+2026-06-15 16:44:48,354 | WARNING | Invalid OTP | email=finalend11@gmail.com
+2026-06-15 16:45:20,801 | WARNING | Invalid OTP | email=finalend11@gmail.com
+2026-06-15 16:47:56,399 | WARNING | Invalid OTP | email=finalend11@gmail.com
+2026-06-15 16:49:50,983 | INFO | New signup | user=finalend11@gmail.com
+2026-06-15 16:52:16,220 | INFO | OTP sent | email=finalend11@gmail.com
+2026-06-15 16:52:38,959 | INFO | OTP verified | email=finalend11@gmail.com
