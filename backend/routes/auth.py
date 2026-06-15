@@ -2,7 +2,8 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
+from utils.sanitize import sanitize_text, sanitize_username
 import bcrypt
 from datetime import datetime, timedelta
 from jose import jwt
@@ -33,6 +34,22 @@ class SignupRequest(BaseModel):
     email: EmailStr
     password: str
 
+    @validator('username')
+    def validate_username(cls, v):
+        if len(v) < 3:
+            raise ValueError('Username must be at least 3 characters')
+        if len(v) > 30:
+            raise ValueError('Username must be under 30 characters')
+        return sanitize_username(v)
+
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        if len(v) > 100:
+            raise ValueError('Password must be under 100 characters')
+        return v
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
@@ -51,6 +68,7 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -65,6 +83,7 @@ def create_access_token(user_id: int) -> str:
         "iat": datetime.utcnow()
     }
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
 
 @router.post("/auth/signup", response_model=TokenResponse)
 @limiter.limit("3/minute")

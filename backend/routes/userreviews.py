@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Request, Depends, HTTPException, status, Request
+from utils.sanitize import sanitize_text
+from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from database import get_db
 from models import User, Review, Media 
 from auth import get_current_user
@@ -28,6 +29,26 @@ class ReviewCreate(BaseModel):
     content: str
     rating: int
     title: Optional[str] = ""
+
+    @validator('content')
+    def validate_content(cls, v):
+        if len(v) < 10:
+            raise ValueError('Review must be at least 10 characters')
+        if len(v) > 5000:
+            raise ValueError('Review must be under 5000 characters')
+        return sanitize_text(v)
+
+    @validator('title')
+    def validate_title(cls, v):
+        if v and len(v) > 100:
+            raise ValueError('Title must be under 100 characters')
+        return sanitize_text(v)
+
+    @validator('rating')
+    def validate_rating(cls, v):
+        if v < 1 or v > 10:
+            raise ValueError('Rating must be between 1 and 10')
+        return v
 
 @router.post("")
 @limiter.limit("10/minute")

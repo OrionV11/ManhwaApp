@@ -44,3 +44,5 @@
 2026-06-07 14:43:50,523 | WARNING | Failed login - user not found | email=test@test.com | ip=192.168.1.135
 2026-06-07 14:43:50,528 | WARNING | Failed login - user not found | email=test@test.com | ip=192.168.1.135
 2026-06-07 14:43:50,536 | WARNING | Failed login - user not found | email=test@test.com | ip=192.168.1.135
+2026-06-15 15:25:40,460 | INFO | New signup | user=xss@test.com
+2026-06-15 15:26:34,855 | INFO | New signup | user=xss3@test.com
