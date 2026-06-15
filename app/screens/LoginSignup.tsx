@@ -15,16 +15,20 @@ import {
   View
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/utils/api';
 
 const user_icon = require('../../assets/images/person.png');
 const password_icon = require('../../assets/images/hide.png');
 const email_icon = require('../../assets/images/email.png');
 
+type Screen = 'Login' | 'Sign Up' | 'OTP';
+
 const LoginSignup = () => {
-  const [action, setAction] = useState<'Login' | 'Sign Up'>('Sign Up');
+  const [action, setAction] = useState<Screen>('Sign Up');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { login, signup } = useAuth();
@@ -51,30 +55,44 @@ const LoginSignup = () => {
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-
+     if (action !== 'OTP' && !emailRegex.test(email)) {
+       Alert.alert('Error', 'Please enter a valid email address');
+       return;
+}
     // Password validation
-    if (password.length < 6) {
+    if (action !== 'OTP' && password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters long');
       return;
-    }
-
+}
     setLoading(true);
     try {
       if (action === 'Sign Up') {
         await signup(username.trim(), email.trim(), password);
-      } else {
+        router.replace('/(tabs)');
+
+      } else if (action === 'Login') {
+        // Step 1 - verify password first
         await login(email.trim(), password);
+        // Step 2 - request OTP
+        await api.post('/api/auth/request-otp', { email: email.trim() }, false);
+        // Step 3 - show OTP screen
+        setAction('OTP');
+
+      } else if (action === 'OTP') {
+        if (!otp.trim() || otp.length !== 6) {
+          Alert.alert('Error', 'Please enter the 6 digit code');
+          setLoading(false);
+          return;
+        }
+        // Step 4 - verify OTP
+        await api.post('/api/auth/verify-otp', { email: email.trim(), otp: otp.trim() }, false);
+        router.replace('/(tabs)');
       }
-      
-      // Navigate to main app
-      router.replace('/(tabs)');
     } catch (error) {
-      // Error is already handled in AuthContext with Alert
       console.error(`${action} failed:`, error);
+      if (action === 'OTP') {
+        Alert.alert('Error', 'Invalid or expired code. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -86,8 +104,82 @@ const LoginSignup = () => {
     setUsername('');
     setEmail('');
     setPassword('');
+    setOtp('');
+  };
+  
+  const resendOTP = async () => {
+    try {
+      await api.post('/auth/request-otp', { email: email.trim() }, false);
+      Alert.alert('Success', 'A new code has been sent to your email');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to resend code');
+    }
   };
 
+  // OTP Screen
+  if (action === 'OTP') {
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Text style={styles.text}>Verify Email</Text>
+            <View style={styles.underline} />
+          </View>
+
+          <Text style={styles.otpDescription}>
+            Enter the 6 digit code sent to{'\n'}
+            <Text style={styles.link}>{email}</Text>
+          </Text>
+
+          <View style={styles.inputs}>
+            <View style={styles.input}>
+              <TextInput
+                style={[styles.textInput, styles.otpInput]}
+                placeholder="000000"
+                placeholderTextColor={Colors.textTertiary}
+                keyboardType="number-pad"
+                maxLength={6}
+                value={otp}
+                onChangeText={setOtp}
+                editable={!loading}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.submit, styles.submitActive]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitText}>Verify Code</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={resendOTP}>
+              <Text style={styles.forgotPassword}>
+                Didn't receive a code? <Text style={styles.link}>Resend</Text>
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => switchAction('Login')}>
+              <Text style={styles.forgotPassword}>
+                <Text style={styles.link}>Back to Login</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+    
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -259,6 +351,19 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: Colors.text,
+  },
+  otpInput: {
+    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
+    letterSpacing: 8,
+  },
+  otpDescription: {
+    textAlign: 'center',
+    color: Colors.textSecondary,
+    fontSize: 16,
+    marginBottom: Spacing.lg,
+    lineHeight: 24,
   },
   forgotPassword: {
     marginTop: Spacing.sm + 2,
