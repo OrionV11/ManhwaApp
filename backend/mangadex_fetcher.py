@@ -102,7 +102,7 @@ class MangaDexFetcher:
             "source": "MANGADEX"
         }
 
-    def fetch_all_manhwa(self, total: int = 500) -> List[Dict]:
+    def fetch_all_manhwa(self, total: int = 2000) -> List[Dict]:
         all_manhwa = []
         offset = 0
         batch_size = 100
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     fetcher = MangaDexFetcher()
 
     print("Fetching manhwa from MangaDex...")
-    manhwa_list = fetcher.fetch_all_manhwa(total=500)
+    manhwa_list = fetcher.fetch_all_manhwa(total=2000)
 
     print("Transforming data...")
     transformed = [fetcher.transform_to_db_format(m) for m in manhwa_list]
