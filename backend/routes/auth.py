@@ -18,6 +18,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+SIGNUP_LIMIT = os.getenv("SIGNUP_RATE_LIMIT", "3/minute")
+LOGIN_LIMIT = os.getenv("LOGIN_RATE_LIMIT", "5/minute")
+
 limiter = Limiter(key_func=get_remote_address)
 
 
@@ -86,7 +89,7 @@ def create_access_token(user_id: int) -> str:
 
 
 @router.post("/auth/signup", response_model=TokenResponse)
-@limiter.limit("3/minute")
+@limiter.limit(SIGNUP_LIMIT)
 def signup(request: Request, data: SignupRequest, db: Session = Depends(get_db)):
     """Sign up a new user"""
     try:
@@ -142,7 +145,7 @@ def signup(request: Request, data: SignupRequest, db: Session = Depends(get_db))
         raise
 
 @router.post("/auth/login", response_model=TokenResponse)
-@limiter.limit("5/minute")
+@limiter.limit(LOGIN_LIMIT)
 def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     """Log in an existing user"""
     ip = request.client.host

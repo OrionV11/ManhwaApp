@@ -4,3 +4,29 @@
 2026-06-07 14:25:56,349 | ERROR | Media not found | id=99999
 2026-06-07 14:25:58,237 | ERROR | review not found | user=1 | review=99999
 2026-06-07 14:25:58,744 | WARNING | Can't delete review you don't own | user=2 | review=1
+2026-06-15 15:32:02,235 | ERROR | Media not found | id=99999
+2026-06-15 15:33:38,360 | ERROR | Media not found | id=99999
+2026-06-15 15:35:22,107 | ERROR | Media not found | id=99999
+2026-06-15 15:37:38,379 | ERROR | Media not found | id=99999
+2026-06-15 15:40:44,332 | ERROR | Media not found | id=99999
+2026-06-15 15:42:13,164 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:42:13,973 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:42:39,650 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:42:40,502 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:42:43,097 | ERROR | review not found | user=1 | review=99999
+2026-06-15 15:42:43,585 | WARNING | Can't delete review you don't own | user=2 | review=1
+2026-06-15 15:47:23,719 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:47:24,572 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:47:25,729 | ERROR | Media not found | id=99999
+2026-06-15 15:47:27,746 | ERROR | review not found | user=1 | review=99999
+2026-06-15 15:47:28,232 | WARNING | Can't delete review you don't own | user=2 | review=1
+2026-06-15 15:49:05,058 | ERROR | Media not found | id=99999
+2026-06-15 15:49:05,919 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:49:06,755 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:49:09,405 | ERROR | review not found | user=1 | review=99999
+2026-06-15 15:49:09,898 | WARNING | Can't delete review you don't own | user=2 | review=1
+2026-06-15 15:51:44,906 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:51:45,728 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-15 15:51:46,809 | ERROR | Media not found | id=99999
+2026-06-15 15:51:48,827 | ERROR | review not found | user=1 | review=99999
+2026-06-15 15:51:49,310 | WARNING | Can't delete review you don't own | user=2 | review=1

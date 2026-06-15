@@ -148,6 +148,55 @@ async def get_my_reviews(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
+@router.get("/public")
+def get_public_reviews(
+    sort: str = "popular",  # popular, recent, rating
+    limit: int = 50,
+    db: Session = Depends(get_db)
+):
+    """Get public reviews sorted by popularity"""
+    
+    query = db.query(Review)
+    
+    # Sort by different criteria
+    if sort == "popular":
+        query = query.order_by(Review.likes_count.desc())
+    elif sort == "recent":
+        query = query.order_by(Review.created_at.desc())
+    elif sort == "rating":
+        query = query.order_by(Review.rating.desc())
+    
+    reviews = query.limit(limit).all()
+    
+    result = []
+    for review in reviews:
+        user = db.query(User).filter(User.id == review.user_id).first()
+        media = db.query(Media).filter(Media.id == review.media_id).first()
+        
+        if user and media:
+            result.append({
+                "id": review.id,
+                "rating": float(review.rating) if review.rating else None,
+                "title": review.title,
+                "content": review.content,
+                "likes_count": review.likes_count or 0,
+                "created_at": review.created_at.isoformat(),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "profile_picture": user.profile_picture,
+                },
+                "media": {
+                    "id": media.id,
+                    "title_english": media.title_english,
+                    "title_romaji": media.title_romaji,
+                    "cover_image": media.cover_image,
+                    "type": media.type,
+                },
+            })
+    
+    return result
+
 @router.delete("/{review_id}")
 async def delete_review(
     review_id: int,
@@ -272,53 +321,4 @@ def check_user_liked_review(
     )
     return {"has_liked": has_liked}
 
-# backend/routes/reviews.py
 
-@router.get("/public")
-def get_public_reviews(
-    sort: str = "popular",  # popular, recent, rating
-    limit: int = 50,
-    db: Session = Depends(get_db)
-):
-    """Get public reviews sorted by popularity"""
-    
-    query = db.query(Review)
-    
-    # Sort by different criteria
-    if sort == "popular":
-        query = query.order_by(Review.likes_count.desc())
-    elif sort == "recent":
-        query = query.order_by(Review.created_at.desc())
-    elif sort == "rating":
-        query = query.order_by(Review.rating.desc())
-    
-    reviews = query.limit(limit).all()
-    
-    result = []
-    for review in reviews:
-        user = db.query(User).filter(User.id == review.user_id).first()
-        media = db.query(Media).filter(Media.id == review.media_id).first()
-        
-        if user and media:
-            result.append({
-                "id": review.id,
-                "rating": float(review.rating) if review.rating else None,
-                "title": review.title,
-                "content": review.content,
-                "likes_count": review.likes_count or 0,
-                "created_at": review.created_at.isoformat(),
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "profile_picture": user.profile_picture,
-                },
-                "media": {
-                    "id": media.id,
-                    "title_english": media.title_english,
-                    "title_romaji": media.title_romaji,
-                    "cover_image": media.cover_image,
-                    "type": media.type,
-                },
-            })
-    
-    return result

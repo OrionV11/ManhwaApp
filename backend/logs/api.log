@@ -38,3 +38,167 @@
 2026-06-07 14:26:00,391 | INFO | Review liked | user=2 | review=1
 2026-06-07 14:26:00,405 | INFO | Review liked removed | user=2 | review=1
 2026-06-07 14:26:00,692 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:32:01,765 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:32:01,800 | INFO | Trending requests | limit=2 | results=2
+2026-06-15 15:32:01,832 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:32:01,862 | INFO | Trending requests | limit=10 | results=0
+2026-06-15 15:32:01,898 | INFO | Search | query=Solo | results=1
+2026-06-15 15:32:01,941 | INFO | Search | query=a | results=0
+2026-06-15 15:32:01,978 | INFO | Search | query=zzznomatch | results=0
+2026-06-15 15:32:02,202 | INFO | Media fetch | id=1
+2026-06-15 15:32:02,268 | INFO | Media fetch | id=1
+2026-06-15 15:33:35,141 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:33:35,422 | INFO | Trending requests | limit=2 | results=2
+2026-06-15 15:33:35,716 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:33:36,003 | INFO | Trending requests | limit=10 | results=0
+2026-06-15 15:33:36,295 | INFO | Search | query=Solo | results=1
+2026-06-15 15:33:36,563 | INFO | Search | query=a | results=0
+2026-06-15 15:33:36,832 | INFO | Search | query=zzznomatch | results=0
+2026-06-15 15:33:38,320 | INFO | Media fetch | id=1
+2026-06-15 15:33:38,395 | INFO | Media fetch | id=1
+2026-06-15 15:35:21,525 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:35:21,579 | INFO | Trending requests | limit=2 | results=2
+2026-06-15 15:35:21,622 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:35:21,689 | INFO | Trending requests | limit=10 | results=0
+2026-06-15 15:35:21,727 | INFO | Search | query=Solo | results=1
+2026-06-15 15:35:21,774 | INFO | Search | query=a | results=0
+2026-06-15 15:35:21,811 | INFO | Search | query=zzznomatch | results=0
+2026-06-15 15:35:22,074 | INFO | Media fetch | id=1
+2026-06-15 15:35:22,142 | INFO | Media fetch | id=1
+2026-06-15 15:37:37,826 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:37:37,887 | INFO | Trending requests | limit=2 | results=2
+2026-06-15 15:37:37,943 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:37:37,988 | INFO | Trending requests | limit=10 | results=0
+2026-06-15 15:37:38,024 | INFO | Search | query=Solo | results=1
+2026-06-15 15:37:38,059 | INFO | Search | query=a | results=0
+2026-06-15 15:37:38,092 | INFO | Search | query=zzznomatch | results=0
+2026-06-15 15:37:38,346 | INFO | Media fetch | id=1
+2026-06-15 15:37:38,411 | INFO | Media fetch | id=1
+2026-06-15 15:40:43,761 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:40:43,826 | INFO | Trending requests | limit=2 | results=2
+2026-06-15 15:40:43,879 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:40:43,911 | INFO | Trending requests | limit=10 | results=0
+2026-06-15 15:40:43,955 | INFO | Search | query=Solo | results=1
+2026-06-15 15:40:44,001 | INFO | Search | query=a | results=0
+2026-06-15 15:40:44,034 | INFO | Search | query=zzznomatch | results=0
+2026-06-15 15:40:44,296 | INFO | Media fetch | id=1
+2026-06-15 15:40:44,371 | INFO | Media fetch | id=1
+2026-06-15 15:42:12,603 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:12,882 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:12,887 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:13,453 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:13,462 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:42:13,724 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:42:14,511 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:39,109 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:39,394 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:39,398 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:39,950 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:39,961 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:42:40,241 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:42:41,073 | INFO | User add media | user=1 | media=1
+2026-06-15 15:42:41,442 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:42:41,704 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:42:42,512 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:42:42,810 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:42:42,820 | INFO | Review deleted successfully | user=1 | review=1
+2026-06-15 15:42:43,579 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:42:43,870 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:42:43,878 | INFO | Review updated | user=1 | review=1
+2026-06-15 15:42:44,357 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:42:44,849 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:42:44,857 | INFO | Review liked | user=2 | review=1
+2026-06-15 15:42:45,333 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:42:45,342 | INFO | Review liked | user=2 | review=1
+2026-06-15 15:42:45,354 | INFO | Review liked removed | user=2 | review=1
+2026-06-15 15:47:23,179 | INFO | User add media | user=1 | media=1
+2026-06-15 15:47:23,440 | INFO | User add media | user=1 | media=1
+2026-06-15 15:47:23,445 | INFO | User add media | user=1 | media=1
+2026-06-15 15:47:24,020 | INFO | User add media | user=1 | media=1
+2026-06-15 15:47:24,027 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:47:24,316 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:47:25,103 | INFO | User add media | user=1 | media=1
+2026-06-15 15:47:25,215 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:47:25,261 | INFO | Trending requests | limit=2 | results=2
+2026-06-15 15:47:25,307 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:47:25,337 | INFO | Trending requests | limit=10 | results=0
+2026-06-15 15:47:25,377 | INFO | Search | query=Solo | results=1
+2026-06-15 15:47:25,427 | INFO | Search | query=a | results=0
+2026-06-15 15:47:25,470 | INFO | Search | query=zzznomatch | results=0
+2026-06-15 15:47:25,697 | INFO | Media fetch | id=1
+2026-06-15 15:47:25,769 | INFO | Media fetch | id=1
+2026-06-15 15:47:26,036 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:47:26,295 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:47:27,134 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:47:27,433 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:47:27,441 | INFO | Review deleted successfully | user=1 | review=1
+2026-06-15 15:47:28,229 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:47:28,504 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:47:28,517 | INFO | Review updated | user=1 | review=1
+2026-06-15 15:47:29,011 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:47:29,487 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:47:29,494 | INFO | Review liked | user=2 | review=1
+2026-06-15 15:47:29,980 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:47:29,987 | INFO | Review liked | user=2 | review=1
+2026-06-15 15:47:29,995 | INFO | Review liked removed | user=2 | review=1
+2026-06-15 15:47:52,421 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:04,533 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:49:04,578 | INFO | Trending requests | limit=2 | results=2
+2026-06-15 15:49:04,614 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:49:04,651 | INFO | Trending requests | limit=10 | results=0
+2026-06-15 15:49:04,685 | INFO | Search | query=Solo | results=1
+2026-06-15 15:49:04,728 | INFO | Search | query=a | results=0
+2026-06-15 15:49:04,762 | INFO | Search | query=zzznomatch | results=0
+2026-06-15 15:49:05,009 | INFO | Media fetch | id=1
+2026-06-15 15:49:05,092 | INFO | Media fetch | id=1
+2026-06-15 15:49:05,405 | INFO | User add media | user=1 | media=1
+2026-06-15 15:49:05,655 | INFO | User add media | user=1 | media=1
+2026-06-15 15:49:05,659 | INFO | User add media | user=1 | media=1
+2026-06-15 15:49:06,225 | INFO | User add media | user=1 | media=1
+2026-06-15 15:49:06,234 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:49:06,503 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:49:07,331 | INFO | User add media | user=1 | media=1
+2026-06-15 15:49:07,637 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:07,907 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:08,763 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:09,102 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:09,117 | INFO | Review deleted successfully | user=1 | review=1
+2026-06-15 15:49:09,895 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:10,167 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:10,177 | INFO | Review updated | user=1 | review=1
+2026-06-15 15:49:10,665 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:11,146 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:11,157 | INFO | Review liked | user=2 | review=1
+2026-06-15 15:49:11,658 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:49:11,668 | INFO | Review liked | user=2 | review=1
+2026-06-15 15:49:11,675 | INFO | Review liked removed | user=2 | review=1
+2026-06-15 15:51:44,345 | INFO | User add media | user=1 | media=1
+2026-06-15 15:51:44,649 | INFO | User add media | user=1 | media=1
+2026-06-15 15:51:44,653 | INFO | User add media | user=1 | media=1
+2026-06-15 15:51:45,198 | INFO | User add media | user=1 | media=1
+2026-06-15 15:51:45,212 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:51:45,477 | INFO | Media removed | user=1 | media=1
+2026-06-15 15:51:46,281 | INFO | User add media | user=1 | media=1
+2026-06-15 15:51:46,361 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:51:46,394 | INFO | Trending requests | limit=2 | results=2
+2026-06-15 15:51:46,427 | INFO | Trending requests | limit=10 | results=3
+2026-06-15 15:51:46,456 | INFO | Trending requests | limit=10 | results=0
+2026-06-15 15:51:46,491 | INFO | Search | query=Solo | results=1
+2026-06-15 15:51:46,523 | INFO | Search | query=a | results=0
+2026-06-15 15:51:46,556 | INFO | Search | query=zzznomatch | results=0
+2026-06-15 15:51:46,777 | INFO | Media fetch | id=1
+2026-06-15 15:51:46,841 | INFO | Media fetch | id=1
+2026-06-15 15:51:47,112 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:51:47,377 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:51:48,215 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:51:48,533 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:51:48,546 | INFO | Review deleted successfully | user=1 | review=1
+2026-06-15 15:51:49,307 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:51:49,574 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:51:49,581 | INFO | Review updated | user=1 | review=1
+2026-06-15 15:51:50,068 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:51:50,544 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:51:50,552 | INFO | Review liked | user=2 | review=1
+2026-06-15 15:51:51,027 | INFO | Review created successfully | user=1 | media=1
+2026-06-15 15:51:51,033 | INFO | Review liked | user=2 | review=1
+2026-06-15 15:51:51,043 | INFO | Review liked removed | user=2 | review=1
