@@ -30,52 +30,76 @@ export default function SettingsModal({ visible, onClose, user }: Props) {
         router.push('/change-password');
     };
 
-    const handleLogout = () => {
-        console.log('🔴 Logout button pressed');
+    const handleLogout = async () => {
+    console.log('Logout button pressed');
+
+    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+        // Web
+        const confirmed = window.confirm('Are you sure you want to logout?');
+        if (confirmed) {
+            await logout();
+            onClose();
+            router.replace('/screens/LoginSignup');
+        }
+    } else {
+        // Mobile
         Alert.alert(
             'Logout',
             'Are you sure you want to logout?',
             [
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                    onPress: () => console.log('❌ Logout cancelled'),
-                },
+                { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Logout',
                     style: 'destructive',
                     onPress: async () => {
-                        console.log('✅ Logout confirmed, calling logout()...');
                         await logout();
-                        console.log('✅ Logout completed');
                         onClose();
-                        router.replace('/(tabs)');
+                        router.replace('/screens/LoginSignup');
                     }
                 }
             ]
         );
-    };
-
-    const handleDeleteAccount = () => {
+    }
+};
+    const handleDeleteAccount = async () => {
+    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+        // Web
+        const confirmed = window.confirm('This action cannot be undone. All your data will be permanently deleted. Are you sure?');
+        if (confirmed) {
+            setLoading(true);
+            try {
+                await api.delete('/api/users/me');
+                await logout();
+                onClose();
+                router.replace('/screens/LoginSignup');
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                if (error instanceof ApiError) {
+                    alert(error.message);
+                } else {
+                    alert('Failed to delete account');
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
+    } else {
+        // Mobile
         Alert.alert(
             'Delete Account',
             'This action cannot be undone. All your data will be permanently deleted. Are you sure?',
             [
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
+                { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Delete',
                     style: 'destructive',
                     onPress: async () => {
                         setLoading(true);
                         try {
-                            await api.delete(`/api/users/me`);
+                            await api.delete('/api/users/me');
                             await logout();
                             onClose();
-                            router.replace('/(tabs)');
-                            Alert.alert('Account Deleted', 'Your account has been deleted');
+                            router.replace('/screens/LoginSignup');
                         } catch (error) {
                             console.error('Error deleting account:', error);
                             if (error instanceof ApiError) {
@@ -90,8 +114,8 @@ export default function SettingsModal({ visible, onClose, user }: Props) {
                 }
             ]
         );
-    };
-
+    }
+};
     const handleToggleNotification = async () => {
         const newValue = !notificationEnabled;
         setNotificationEnabled(newValue);

@@ -254,3 +254,14 @@
 2026-06-15 16:49:50,983 | INFO | New signup | user=finalend11@gmail.com
 2026-06-15 16:52:16,220 | INFO | OTP sent | email=finalend11@gmail.com
 2026-06-15 16:52:38,959 | INFO | OTP verified | email=finalend11@gmail.com
+2026-06-15 17:14:16,103 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-15 17:14:35,376 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-15 17:15:05,007 | INFO | New signup | user=orionvia31@gmal.com
+2026-06-15 17:15:05,214 | INFO | Successful login | user=orionvia31@gmal.com | ip=192.168.1.135
+2026-06-16 15:03:39,872 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-16 15:05:23,670 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-16 15:05:55,718 | INFO | OTP sent | email=finalend11@gmail.com
+2026-06-16 15:06:30,650 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-16 15:07:38,126 | INFO | OTP sent | email=finalend11@gmail.com
+2026-06-16 15:08:48,949 | INFO | OTP sent | email=finalend11@gmail.com
+2026-06-16 15:09:07,173 | INFO | OTP verified | email=finalend11@gmail.com

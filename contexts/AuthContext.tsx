@@ -114,32 +114,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // contexts/AuthContext.tsx
 
 const logout = async () => {
-    console.log('🔵 AuthContext logout() called');
+    console.log('AuthContext logout() called');
     try {
-        // Optional: Call backend logout endpoint if you have one
         if (token) {
-            console.log('🔵 Calling backend logout...');
+            console.log('Calling backend logout...');
             await fetch(`${API_BASE_URL}/api/auth/logout`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-            }).catch(err => console.log('⚠️ Logout API call failed:', err));
+            }).catch(err => console.log('ogout API call failed:', err));
         }
     } catch (error) {
-        console.error('❌ Logout API error:', error);
+        console.error('Logout API error:', error);
     } finally {
-        console.log('🔵 Clearing AsyncStorage...');
+        console.log('Clearing AsyncStorage...');
         // Clear local storage regardless of API result
         await Promise.all([
             AsyncStorage.removeItem('user'),
             AsyncStorage.removeItem('authToken'),
         ]);
-        console.log('🔵 Setting user and token to null...');
+        
+        if (typeof window !== 'undefined') {
+            localStorage.clear();
+        }
+        console.log('Setting user and token to null...');
         setUser(null);
         setToken(null);
-        console.log('✅ Logout complete!');
+        console.log('Logout complete!');
     }
 };
 
