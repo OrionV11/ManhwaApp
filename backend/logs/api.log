@@ -259,3 +259,33 @@
 2026-06-16 16:39:09,962 | INFO | User followed | follower=11 | following=1
 2026-06-16 16:39:45,275 | INFO | Trending requests | limit=10 | results=10
 2026-06-16 16:41:02,893 | INFO | User followed | follower=11 | following=10
+2026-06-16 16:45:31,962 | INFO | User add media | user=1 | media=1
+2026-06-16 16:45:32,245 | INFO | User add media | user=1 | media=1
+2026-06-16 16:45:32,252 | INFO | User add media | user=1 | media=1
+2026-06-16 16:45:32,800 | INFO | User add media | user=1 | media=1
+2026-06-16 16:45:32,811 | INFO | Media removed | user=1 | media=1
+2026-06-16 16:45:33,060 | INFO | Media removed | user=1 | media=1
+2026-06-16 16:45:33,859 | INFO | User add media | user=1 | media=1
+2026-06-16 16:45:33,940 | INFO | Trending requests | limit=10 | results=3
+2026-06-16 16:45:33,975 | INFO | Trending requests | limit=2 | results=2
+2026-06-16 16:45:34,015 | INFO | Trending requests | limit=10 | results=3
+2026-06-16 16:45:34,046 | INFO | Trending requests | limit=10 | results=0
+2026-06-16 16:45:34,083 | INFO | Search | query=Solo | results=1
+2026-06-16 16:45:34,123 | INFO | Search | query=a | results=0
+2026-06-16 16:45:34,157 | INFO | Search | query=zzznomatch | results=0
+2026-06-16 16:45:34,384 | INFO | Media fetch | id=1
+2026-06-16 16:45:34,447 | INFO | Media fetch | id=1
+2026-06-16 16:45:34,706 | INFO | Review created successfully | user=1 | media=1
+2026-06-16 16:45:34,974 | INFO | Review created successfully | user=1 | media=1
+2026-06-16 16:45:35,756 | INFO | Review created successfully | user=1 | media=1
+2026-06-16 16:45:36,061 | INFO | Review created successfully | user=1 | media=1
+2026-06-16 16:45:36,080 | INFO | Review deleted successfully | user=1 | review=1
+2026-06-16 16:45:36,848 | INFO | Review created successfully | user=1 | media=1
+2026-06-16 16:45:37,108 | INFO | Review created successfully | user=1 | media=1
+2026-06-16 16:45:37,119 | INFO | Review updated | user=1 | review=1
+2026-06-16 16:45:37,589 | INFO | Review created successfully | user=1 | media=1
+2026-06-16 16:45:38,084 | INFO | Review created successfully | user=1 | media=1
+2026-06-16 16:45:38,099 | INFO | Review liked | user=2 | review=1
+2026-06-16 16:45:38,570 | INFO | Review created successfully | user=1 | media=1
+2026-06-16 16:45:38,580 | INFO | Review liked | user=2 | review=1
+2026-06-16 16:45:38,597 | INFO | Review liked removed | user=2 | review=1

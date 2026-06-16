@@ -285,3 +285,36 @@
 2026-06-16 16:29:42,666 | INFO | New signup | user=testfriend@test.com
 2026-06-16 16:37:16,044 | INFO | Signup OTP sent | email=orionvia11@gmail.com
 2026-06-16 16:37:31,137 | INFO | New signup verified | user=orionvia11@gmail.com
+2026-06-16 16:45:30,152 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:30,401 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:30,651 | INFO | New signup | user=test1@test.com
+2026-06-16 16:45:30,926 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:31,122 | INFO | Successful login | user=test@test.com | ip=testclient
+2026-06-16 16:45:31,379 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:31,574 | WARNING | Failed login - wrong password | user=test@test.com | ip=testclient
+2026-06-16 16:45:31,622 | WARNING | Failed login - user not found | email=nonexistent@test.com | ip=testclient
+2026-06-16 16:45:31,934 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:32,229 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:32,485 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:32,786 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:33,052 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:33,304 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:33,593 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:33,846 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:34,687 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:34,959 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:35,261 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:35,498 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:35,742 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:36,045 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:36,362 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:36,614 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:36,831 | INFO | New signup | user=test2@test.com
+2026-06-16 16:45:37,092 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:37,360 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:37,574 | INFO | New signup | user=test2@test.com
+2026-06-16 16:45:37,854 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:38,068 | INFO | New signup | user=test2@test.com
+2026-06-16 16:45:38,343 | INFO | New signup | user=test@test.com
+2026-06-16 16:45:38,555 | INFO | New signup | user=test2@test.com
+2026-06-16 16:45:38,886 | INFO | New signup | user=test@test.com

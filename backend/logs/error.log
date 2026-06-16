@@ -38,3 +38,9 @@
 2026-06-16 16:30:15,741 | ERROR | Media/User not found | user=10 | media=1
 2026-06-16 16:30:24,397 | ERROR | Media/User not found | user=10 | media=1
 2026-06-16 16:30:57,149 | ERROR | Add media failed | user=10 | media=165546957
+2026-06-16 16:44:42,330 | WARNING | Favorites not found | user=11
+2026-06-16 16:45:32,489 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-16 16:45:33,309 | ERROR | Media/User not found | user=1 | media=99999
+2026-06-16 16:45:34,415 | ERROR | Media not found | id=99999
+2026-06-16 16:45:36,366 | ERROR | review not found | user=1 | review=99999
+2026-06-16 16:45:36,852 | WARNING | Can't delete review you don't own | user=2 | review=1
