@@ -29,53 +29,53 @@ const LoginSignup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
+  const [previousAction, setPreviousAction] = useState<'Login' | 'Sign Up'>('Sign Up');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup } = useAuth();
+  const { login, signup, loginWithToken } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async () => {
-    // Validation
     if (action === 'Sign Up') {
       if (!username.trim() || !email.trim() || !password.trim()) {
         Alert.alert('Error', 'Please fill in all fields');
         return;
       }
-
       if (username.trim().length < 3) {
         Alert.alert('Error', 'Username must be at least 3 characters long');
         return;
       }
-    } else {
+    } else if (action === 'Login') {
       if (!email.trim() || !password.trim()) {
         Alert.alert('Error', 'Please fill in all fields');
         return;
       }
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-     if (action !== 'OTP' && !emailRegex.test(email)) {
-       Alert.alert('Error', 'Please enter a valid email address');
-       return;
-}
-    // Password validation
-    if (action !== 'OTP' && password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
-      return;
-}
+    if (action !== 'OTP') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        Alert.alert('Error', 'Please enter a valid email address');
+        return;
+      }
+      if (password.length < 6) {
+        Alert.alert('Error', 'Password must be at least 6 characters long');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       if (action === 'Sign Up') {
-        await signup(username.trim(), email.trim(), password);
-        router.replace('/(tabs)');
+        // Step 1 - send OTP to verify email before creating account
+        await api.post('/api/auth/send-signup-otp', { email: email.trim() }, false);
+        setPreviousAction('Sign Up');
+        setAction('OTP');
 
       } else if (action === 'Login') {
-        // Step 1 - verify password first
         await login(email.trim(), password);
-        // Step 2 - request OTP
         await api.post('/api/auth/request-otp', { email: email.trim() }, false);
-        // Step 3 - show OTP screen
+        setPreviousAction('Login');
         setAction('OTP');
 
       } else if (action === 'OTP') {
@@ -84,15 +84,25 @@ const LoginSignup = () => {
           setLoading(false);
           return;
         }
-        // Step 4 - verify OTP
-        await api.post('/api/auth/verify-otp', { email: email.trim(), otp: otp.trim() }, false);
-        router.replace('/(tabs)');
+
+        if (previousAction === 'Sign Up') {
+          // Verify OTP then create account
+          const response = await api.post('/api/auth/verify-signup-otp', {
+            email: email.trim(),
+            otp: otp.trim(),
+            username: username.trim(),
+            password: password
+          }, false);
+          await loginWithToken(response.user, response.access_token);
+          router.replace('/(tabs)');
+        } else {
+          // Login OTP verification
+          const response = await api.post('/api/auth/verify-otp', { email: email.trim(), otp: otp.trim() }, false);
+          router.replace('/(tabs)');
+        }
       }
     } catch (error) {
       console.error(`${action} failed:`, error);
-      if (action === 'OTP') {
-        Alert.alert('Error', 'Invalid or expired code. Please try again.');
-      }
     } finally {
       setLoading(false);
     }

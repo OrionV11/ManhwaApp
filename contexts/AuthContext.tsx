@@ -21,6 +21,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  loginWithToken: (userData: any, accessToken: string) => Promise<void>;
   updateProfile: (data: { username?: string; bio?: string; profile_picture?: string | null }) => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -54,6 +55,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     }
   };
+
+
+  const loginWithToken = async (userData: any, accessToken: string) => {
+    await Promise.all([
+        AsyncStorage.setItem('user', JSON.stringify(userData)),
+        AsyncStorage.setItem('authToken', accessToken),
+    ]);
+    setUser(userData);
+    setToken(accessToken);
+};
 
   const login = async (email: string, password: string) => {
     try {
@@ -192,6 +203,7 @@ const logout = async () => {
         login,
         signup,
         logout,
+        loginWithToken,
         updateProfile,
         isAuthenticated: !!user && !!token,
       }}

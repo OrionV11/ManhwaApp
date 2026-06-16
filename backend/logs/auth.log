@@ -265,3 +265,17 @@
 2026-06-16 15:07:38,126 | INFO | OTP sent | email=finalend11@gmail.com
 2026-06-16 15:08:48,949 | INFO | OTP sent | email=finalend11@gmail.com
 2026-06-16 15:09:07,173 | INFO | OTP verified | email=finalend11@gmail.com
+2026-06-16 15:11:16,930 | INFO | New signup | user=finalend11@gmail.com
+2026-06-16 15:11:17,135 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-16 15:30:34,539 | INFO | Signup OTP sent | email=finalend11@gmail.com
+2026-06-16 15:30:45,897 | INFO | New signup verified | user=finalend11@gmail.com
+2026-06-16 15:31:17,740 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-16 15:33:34,596 | INFO | OTP sent | email=finalend11@gmail.com
+2026-06-16 15:33:46,315 | INFO | OTP verified | email=finalend11@gmail.com
+2026-06-16 15:46:25,332 | INFO | Signup OTP sent | email=finalend11@gmail.com
+2026-06-16 15:46:39,282 | INFO | New signup verified | user=finalend11@gmail.com
+2026-06-16 15:54:28,194 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-16 15:56:43,030 | INFO | OTP sent | email=finalend11@gmail.com
+2026-06-16 15:56:53,478 | INFO | OTP verified | email=finalend11@gmail.com
+2026-06-16 15:59:31,742 | INFO | Signup OTP sent | email=finalend11@gmail.com
+2026-06-16 15:59:43,957 | INFO | New signup verified | user=finalend11@gmail.com

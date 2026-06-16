@@ -1,6 +1,5 @@
 # backend/routes/auth.py
-
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from typing import Optional
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, validator
 from utils.sanitize import sanitize_text, sanitize_username
@@ -21,19 +20,29 @@ from slowapi.util import get_remote_address
 from utils.email import generate_otp, send_otp_email
 from utils.otp_store import store_otp, verify_otp
 
+load_dotenv()
+
 SIGNUP_LIMIT = os.getenv("SIGNUP_RATE_LIMIT", "3/minute")
 LOGIN_LIMIT = os.getenv("LOGIN_RATE_LIMIT", "5/minute")
 
 limiter = Limiter(key_func=get_remote_address)
 
 
-load_dotenv()
 
 router = APIRouter()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
+
+class SignupOTPRequest(BaseModel):
+    email: EmailStr
+
+class SignupVerifyRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    username: str
+    password: str
 
 class OTPRequest(BaseModel):
     email: EmailStr
@@ -68,10 +77,6 @@ class SignupRequest(BaseModel):
             raise ValueError('Password must be under 100 characters')
         return v
 
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
 class UserResponse(BaseModel):
     id: int
     username: str
@@ -101,6 +106,79 @@ def create_access_token(user_id: int) -> str:
         "iat": datetime.utcnow()
     }
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+@router.post("/auth/send-signup-otp")
+@limiter.limit("3/minute")
+def send_signup_otp(request: Request, data: SignupOTPRequest, db: Session = Depends(get_db)):
+    """Send OTP to verify email before signup"""
+    # Check if email already exists
+    existing = db.query(User).filter(User.email == data.email).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    otp = generate_otp()
+    store_otp(data.email, otp)
+    
+    sent = send_otp_email(data.email, otp)
+    if not sent:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send OTP email"
+        )
+    
+    auth_logger.info(f"Signup OTP sent | email={data.email}")
+    return {"message": "Verification code sent to your email"}
+
+@router.post("/auth/verify-signup-otp", response_model=TokenResponse)
+@limiter.limit("5/minute")
+def verify_signup_otp(request: Request, data: SignupVerifyRequest, db: Session = Depends(get_db)):
+    """Verify OTP and create account"""
+    if not verify_otp(data.email, data.otp):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired OTP"
+        )
+    
+    # Check again in case someone registered while waiting
+    existing = db.query(User).filter(User.email == data.email).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+
+    hashed_password = hash_password(data.password)
+    new_user = User(
+        username=data.username,
+        email=data.email,
+        hashed_password=hashed_password,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    token = create_access_token(new_user.id)
+    auth_logger.info(f"New signup verified | user={data.email}")
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": new_user.id,
+            "username": new_user.username,
+            "email": new_user.email,
+            "bio": new_user.bio,
+            "profile_picture": new_user.profile_picture,
+            "created_at": new_user.created_at.isoformat(),
+            "updated_at": new_user.updated_at.isoformat()
+        }
+    }
 
 @router.post("/auth/request-otp")
 @limiter.limit("3/minute")
