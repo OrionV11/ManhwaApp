@@ -30,3 +30,11 @@
 2026-06-15 15:51:46,809 | ERROR | Media not found | id=99999
 2026-06-15 15:51:48,827 | ERROR | review not found | user=1 | review=99999
 2026-06-15 15:51:49,310 | WARNING | Can't delete review you don't own | user=2 | review=1
+2026-06-16 16:05:01,859 | ERROR | Add to folder failed | user=9 | folder=1
+2026-06-16 16:05:03,017 | ERROR | Add to folder failed | user=9 | folder=1
+2026-06-16 16:05:03,152 | ERROR | Add to folder failed | user=9 | folder=1
+2026-06-16 16:05:03,312 | ERROR | Add to folder failed | user=9 | folder=1
+2026-06-16 16:28:03,196 | ERROR | Add media failed | user=9 | media=228790928
+2026-06-16 16:30:15,741 | ERROR | Media/User not found | user=10 | media=1
+2026-06-16 16:30:24,397 | ERROR | Media/User not found | user=10 | media=1
+2026-06-16 16:30:57,149 | ERROR | Add media failed | user=10 | media=165546957

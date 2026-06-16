@@ -1,5 +1,6 @@
 # routes/favorites.py
 
+from models import User, Media, UserActivity
 from fastapi import APIRouter, Request, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
@@ -20,6 +21,16 @@ router = APIRouter(prefix="/favorites", tags=["favorites"])
 def add_to_favorites(request: Request, media_id: int, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         result = favorites.add_favorite(db, user_id, media_id)
+        
+        # Record activity
+        activity = UserActivity(
+            user_id=user_id,
+            media_id=media_id,
+            activity_type="LIKED"
+        )
+        db.add(activity)
+        db.commit()
+
         api_logger.info(f"User add media | user={user_id} | media={media_id}")
         return result
     except ValueError as e:

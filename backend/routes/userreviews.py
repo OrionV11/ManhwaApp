@@ -83,6 +83,16 @@ async def create_review(request: Request,
         db.add(review)
         db.commit()
         db.refresh(review)
+        
+        from models import UserActivity
+        activity = UserActivity(
+            user_id=current_user.id,
+            media_id=review_data.media_id,
+            activity_type="REVIEWED",
+            details=f"Rated {review_data.rating}/10" if review_data.rating else None
+        )
+        db.add(activity)
+        db.commit()
     
         # Return full review with media info
         media = db.query(Media).filter(Media.id == review.media_id).first()

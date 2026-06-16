@@ -279,3 +279,9 @@
 2026-06-16 15:56:53,478 | INFO | OTP verified | email=finalend11@gmail.com
 2026-06-16 15:59:31,742 | INFO | Signup OTP sent | email=finalend11@gmail.com
 2026-06-16 15:59:43,957 | INFO | New signup verified | user=finalend11@gmail.com
+2026-06-16 16:17:16,991 | WARNING | Failed login - wrong password | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-16 16:17:33,552 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-16 16:20:53,383 | INFO | Successful login | user=finalend11@gmail.com | ip=192.168.1.135
+2026-06-16 16:29:42,666 | INFO | New signup | user=testfriend@test.com
+2026-06-16 16:37:16,044 | INFO | Signup OTP sent | email=orionvia11@gmail.com
+2026-06-16 16:37:31,137 | INFO | New signup verified | user=orionvia11@gmail.com
