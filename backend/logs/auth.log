@@ -318,3 +318,5 @@
 2026-06-16 16:45:38,343 | INFO | New signup | user=test@test.com
 2026-06-16 16:45:38,555 | INFO | New signup | user=test2@test.com
 2026-06-16 16:45:38,886 | INFO | New signup | user=test@test.com
+2026-06-16 17:38:22,856 | INFO | Signup OTP sent | email=finalend11@gmail.com
+2026-06-16 17:38:34,998 | INFO | New signup verified | user=finalend11@gmail.com

@@ -289,3 +289,10 @@
 2026-06-16 16:45:38,570 | INFO | Review created successfully | user=1 | media=1
 2026-06-16 16:45:38,580 | INFO | Review liked | user=2 | review=1
 2026-06-16 16:45:38,597 | INFO | Review liked removed | user=2 | review=1
+2026-06-16 17:33:18,806 | INFO | Trending requests | limit=10 | results=10
+2026-06-16 17:38:35,015 | INFO | Trending requests | limit=10 | results=10
+2026-06-16 17:38:45,221 | INFO | Media fetch | id=165546957
+2026-06-16 17:38:50,696 | INFO | Reading progress added | user=12 | media=165546957
+2026-06-16 17:39:15,498 | INFO | Review created successfully | user=12 | media=165546957
+2026-06-16 17:39:19,783 | INFO | Review liked | user=12 | review=3
+2026-06-16 17:39:20,346 | INFO | Trending requests | limit=10 | results=10
