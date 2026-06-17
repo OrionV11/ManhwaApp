@@ -1,7 +1,7 @@
 # utils/email.py
 import os
 from sendgrid import SendGridAPIClient
-from sendgrid.mail import Mail
+from sendgrid.helpers.mail import Mail
 from dotenv import load_dotenv
 
 load_dotenv()
