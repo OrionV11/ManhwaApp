@@ -1,37 +1,37 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import NullPool
 import os
 
-# Get database URL from environment or use default
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost/manhwa")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Add SSL mode if using PostgreSQL and sslmode not already specified
-if "postgresql" in DATABASE_URL and "?sslmode=" not in DATABASE_URL:
-    DATABASE_URL = DATABASE_URL + "?sslmode=prefer"
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable not set!")
 
-print(f"Database URL: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'local'}")
+# Ensure sslmode=require for Render
+if "postgresql" in DATABASE_URL:
+    if "?sslmode=" in DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.split("?sslmode=")[0] + "?sslmode=require"
+    else:
+        DATABASE_URL = DATABASE_URL + "?sslmode=require"
 
-# Create engine with proper connection settings for Render
+print(f"Connecting to Render PostgreSQL...")
+
 engine = create_engine(
     DATABASE_URL,
     connect_args={
-        "connect_timeout": 10,
+        "connect_timeout": 15,
         "application_name": "manhwa_app",
+        "sslmode": "require",
     },
-    pool_pre_ping=True,  # Test connection before using
-    pool_recycle=3600,   # Recycle connections every hour
-    poolclass=NullPool,  # Important for serverless/Render deployments
-    echo=False,          # Set to True for SQL debugging
+    pool_pre_ping=True,
+    pool_recycle=3600,
+    poolclass=NullPool,
 )
 
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Base for ORM models
+SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
-# Dependency for getting DB session
 def get_db():
     db = SessionLocal()
     try:
