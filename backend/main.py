@@ -1,6 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-
 from secure import Secure
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -20,21 +19,25 @@ from routes.user_activity import router as user_activity_router
 from routes.folders import router as folder_router
 from dependencies import get_current_user_id
 from routes.users import router as user_router
-from routes.auth import router as auth_router
+import os
 
+# Security headers
 secure_headers = Secure()
 
-#Rate Limit
+# Rate Limit
 limiter = Limiter(key_func=get_remote_address)
 
-
 app = FastAPI(title="Manhwa App API")
-
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-# Create tables
-Base.metadata.create_all(bind=engine)
 
+# Create tables on startup
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✓ Database tables created successfully")
+except Exception as e:
+    print(f"⚠ Database table creation failed: {e}")
+    print("Note: Tables may already exist, continuing startup...")
 
 # CORS middleware
 app.add_middleware(
@@ -59,13 +62,13 @@ app.include_router(user_media_likes_router, prefix="/api")
 app.include_router(user_activity_router, prefix="/api")
 app.include_router(folder_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
-app.include_router(auth_router, prefix="/api")
 
-# --------- Health ----------
+# --------- Health Check ----------
 @app.get("/api/health")
 def health_check():
     return {"message": "Server is running", "status": "ok"}
 
+# --------- Security Headers Middleware ----------
 @app.middleware("http")
 async def set_security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -76,7 +79,6 @@ async def set_security_headers(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     return response
-
 
 if __name__ == "__main__":
     import uvicorn

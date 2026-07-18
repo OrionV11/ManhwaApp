@@ -1,35 +1,37 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.pool import NullPool
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# Get database URL from environment or use default
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost/manhwa")
 
-# Database URL
-# For development: postgresql://username:password@localhost:5432/manhwa_db
-# For production: Get from environment variable
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:password@localhost:5432/manhwa_db"
-)
+# Add SSL mode if using PostgreSQL and sslmode not already specified
+if "postgresql" in DATABASE_URL and "?sslmode=" not in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL + "?sslmode=prefer"
 
-# Create engine
+print(f"Database URL: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'local'}")
+
+# Create engine with proper connection settings for Render
 engine = create_engine(
     DATABASE_URL,
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,  # Verify connections before using
-    echo=False  # Set to True for SQL logging during development
+    connect_args={
+        "connect_timeout": 10,
+        "application_name": "manhwa_app",
+    },
+    pool_pre_ping=True,  # Test connection before using
+    pool_recycle=3600,   # Recycle connections every hour
+    poolclass=NullPool,  # Important for serverless/Render deployments
+    echo=False,          # Set to True for SQL debugging
 )
 
-# Create SessionLocal class
+# Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Create Base class for models
+# Base for ORM models
 Base = declarative_base()
 
-# Dependency to get DB session
+# Dependency for getting DB session
 def get_db():
     db = SessionLocal()
     try:
