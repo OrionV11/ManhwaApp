@@ -1,18 +1,19 @@
 // app/user/[id]/following.tsx
 
+import { Colors } from '@/constants/theme';
+import { api } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { api } from '@/utils/api';
 
 type User = {
   id: number;
@@ -101,7 +102,7 @@ export default function FollowingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   backButton: {
     padding: 8,
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
   },
   loadingContainer: {
     flex: 1,
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     marginTop: 16,
   },
   listContainer: {
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.background,
     borderRadius: 12,
     marginBottom: 12,
   },
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -168,12 +169,12 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
     marginBottom: 4,
   },
   bio: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
     lineHeight: 18,
   },
 });

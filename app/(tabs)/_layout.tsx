@@ -9,6 +9,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textSecondary,
         headerShown: false,
+        tabBarPosition: 'top',
         tabBarStyle: {
           backgroundColor: Colors.surface,
           borderTopWidth: 1,
@@ -26,7 +27,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: 'Panelist',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),

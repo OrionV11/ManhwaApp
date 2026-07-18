@@ -1,18 +1,19 @@
 // app/user/[id]/followers.tsx
 
+import { Colors } from '@/constants/theme';
+import { api } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { api } from '@/utils/api';
 
 type FollowUser = {
   id: number;
@@ -108,7 +109,7 @@ export default function FollowersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   centerContainer: {
     flex: 1,
@@ -123,19 +124,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
   },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   avatar: {
     width: 50,
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -158,11 +159,11 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
   },
   bio: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   emptyContainer: {
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     marginTop: 16,
   },
 });

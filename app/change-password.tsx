@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -239,7 +240,7 @@ export default function ChangePassword() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.background,
   },
 
   scrollContent: {
@@ -251,7 +252,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 30,
-    color: '#222',
+    color: Colors.text,
     textAlign: 'center',
   },
 
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: Colors.text,
     marginBottom: 8,
   },
 
@@ -270,9 +271,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: Colors.border,
     borderRadius: 8,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
 
   input: {
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
   },
 
   errorText: {
-    color: '#dc2626',
+    color: Colors.error,
     fontSize: 12,
     marginTop: 4,
   },
@@ -302,14 +303,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    backgroundColor: '#fff',
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
     alignItems: 'center',
   },
 
   cancelButtonText: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     fontWeight: '600',
   },
 
@@ -317,17 +318,17 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: '#3b82f6',
+    backgroundColor: Colors.primary,
     alignItems: 'center',
   },
 
   submitButtonDisabled: {  // Fix typo: was "sumbitButtonDisabled"
-    backgroundColor: '#9ca3af',
+    backgroundColor: Colors.surfaceVariant,
   },
 
   submitButtonText: {  // Fix typo: was "sumbitButtonText"
     fontSize: 16,
-    color: '#fff',
+    color: Colors.text,
     fontWeight: '600',
   },
 });

@@ -1,21 +1,27 @@
+import { Colors } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
 
 const user_icon = require('../../assets/images/person.png');
 const password_icon = require('../../assets/images/hide.png');
 const email_icon = require('../../assets/images/email.png');
 
-const AuthScreen = () => {
+interface AuthModalProps {
+  visible: boolean;
+}
+
+const AuthModal: React.FC<AuthModalProps> = ({ visible }) => {
   const { login, signup } = useAuth();
   const [isSignup, setIsSignup] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -43,6 +49,10 @@ const AuthScreen = () => {
     setLoading(true);
     try {
       await signup(username, email, password);
+      // Clear fields on success
+      setUsername('');
+      setEmail('');
+      setPassword('');
       // Navigation will happen automatically when user state changes
     } catch (error: any) {
       Alert.alert('Signup Failed', error.message || 'Please try again');
@@ -65,6 +75,10 @@ const AuthScreen = () => {
     setLoading(true);
     try {
       await login(email, password);
+      // Clear fields on success
+      setUsername('');
+      setEmail('');
+      setPassword('');
       // Navigation will happen automatically when user state changes
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'Invalid credentials');
@@ -82,88 +96,95 @@ const AuthScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.text}>{isSignup ? 'Sign Up' : 'Login'}</Text>
-        <View style={styles.underline} />
-      </View>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={false}
+      statusBarTranslucent
+    >
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.text}>{isSignup ? 'Sign Up' : 'Login'}</Text>
+          <View style={styles.underline} />
+        </View>
 
-      <View style={styles.inputs}>
-        {isSignup && (
+        <View style={styles.inputs}>
+          {isSignup && (
+            <View style={styles.input}>
+              <Image source={user_icon} style={styles.icon} />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Username"
+                placeholderTextColor="#999"
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+              />
+            </View>
+          )}
+
           <View style={styles.input}>
-            <Image source={user_icon} style={styles.icon} />
+            <Image source={email_icon} style={styles.icon} />
             <TextInput
               style={styles.textInput}
-              placeholder="Username"
+              placeholder="Email"
               placeholderTextColor="#999"
-              value={username}
-              onChangeText={setUsername}
+              keyboardType="email-address"
               autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
-        )}
 
-        <View style={styles.input}>
-          <Image source={email_icon} style={styles.icon} />
-          <TextInput
-            style={styles.textInput}
-            placeholder="Email"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-        </View>
+          <View style={styles.input}>
+            <Image source={password_icon} style={styles.icon} />
+            <TextInput
+              style={styles.textInput}
+              placeholder="Password"
+              placeholderTextColor="#999"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
 
-        <View style={styles.input}>
-          <Image source={password_icon} style={styles.icon} />
-          <TextInput
-            style={styles.textInput}
-            placeholder="Password"
-            placeholderTextColor="#999"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
-
-        {!isSignup && (
-          <Text style={styles.forgotPassword}>
-            Lost Password? <Text style={styles.link}>Click Here!</Text>
-          </Text>
-        )}
-
-        <View style={styles.submitContainer}>
-          {loading ? (
-            <ActivityIndicator size="large" color="#4c00b4" />
-          ) : (
-            <>
-              <TouchableOpacity
-                style={[styles.submit, isSignup && styles.submitActive]}
-                onPress={isSignup ? handleSignup : toggleMode}
-              >
-                <Text style={styles.submitText}>Sign Up</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.submit, !isSignup && styles.submitActive]}
-                onPress={!isSignup ? handleLogin : toggleMode}
-              >
-                <Text style={styles.submitText}>Login</Text>
-              </TouchableOpacity>
-            </>
+          {!isSignup && (
+            <Text style={styles.forgotPassword}>
+              Lost Password? <Text style={styles.link}>Click Here!</Text>
+            </Text>
           )}
+
+          <View style={styles.submitContainer}>
+            {loading ? (
+              <ActivityIndicator size="large" color="#4c00b4" />
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[styles.submit, isSignup && styles.submitActive]}
+                  onPress={isSignup ? handleSignup : toggleMode}
+                >
+                  <Text style={styles.submitText}>Sign Up</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.submit, !isSignup && styles.submitActive]}
+                  onPress={!isSignup ? handleLogin : toggleMode}
+                >
+                  <Text style={styles.submitText}>Login</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </View>
       </View>
-    </View>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
@@ -174,12 +195,12 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
+    color: Colors.text,
   },
   underline: {
     width: 60,
     height: 4,
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
     marginTop: 8,
     borderRadius: 2,
   },
@@ -189,7 +210,7 @@ const styles = StyleSheet.create({
   input: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f2f2f2',
+    backgroundColor: Colors.surfaceVariant,
     borderRadius: 10,
     paddingHorizontal: 15,
     height: 55,
@@ -203,15 +224,15 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: Colors.text,
   },
   forgotPassword: {
     marginTop: 10,
-    color: '#555',
+    color: Colors.textSecondary,
     fontSize: 14,
   },
   link: {
-    color: '#4c00b4',
+    color: Colors.primary,
     fontWeight: '600',
   },
   submitContainer: {
@@ -222,19 +243,19 @@ const styles = StyleSheet.create({
   },
   submit: {
     flex: 1,
-    backgroundColor: '#d3d3d3',
+    backgroundColor: Colors.surfaceVariant,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   submitActive: {
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
   },
   submitText: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: '600',
   },
 });
 
-export default AuthScreen;
+export default AuthModal;

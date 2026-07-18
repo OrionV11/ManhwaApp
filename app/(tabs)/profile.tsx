@@ -1,23 +1,21 @@
-import { Ionicons } from '@expo/vector-icons';
+import ProfileView from '@/components/profile/ProfileView';
+import { Colors } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import ProfileView from '@/components/profile/ProfileView';
-import { useAuth } from '@/contexts/AuthContext';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import LoginSignupModal from '../login';
 
 export default function ProfileScreen() {
   const { user, loading } = useAuth();
   const router = useRouter();
-
-  console.log('🔵 ProfileScreen - loading:', loading);
-  console.log('🔵 ProfileScreen - user:', user);
 
   // Show loading spinner while checking auth
   if (loading) {
     console.log('⏳ Showing loading spinner');
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#4c00b4" />
+        <ActivityIndicator size="large" color={Colors.primary} />
         <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
     );
@@ -25,27 +23,10 @@ export default function ProfileScreen() {
 
   // Show login prompt if user is not authenticated
   if (!user) {
-    console.log('❌ No user found, showing login prompt');
     return (
-      <View style={styles.centerContainer}>
-        <Ionicons name="person-circle-outline" size={80} color="#ccc" />
-        <Text style={styles.notLoggedInTitle}>Not Logged In</Text>
-        <Text style={styles.notLoggedInText}>
-          Please log in to view your profile
-        </Text>
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => router.push('/login')}
-        >
-          <Text style={styles.loginButtonText}>Log In</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.signupButton}
-          onPress={() => router.push('/login')}
-        >
-          <Text style={styles.signupButtonText}>Create Account</Text>
-        </TouchableOpacity>
-      </View>
+      <LoginSignupModal visible={true}
+       onClose={() => router.push('/(tabs)')}
+       onDismiss={() => {}} />
     );
   }
 
@@ -60,28 +41,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
   },
   notLoggedInTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
+    color: Colors.text,
     marginTop: 20,
     marginBottom: 8,
   },
   notLoggedInText: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 30,
   },
   loginButton: {
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
@@ -90,22 +71,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loginButtonText: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: '700',
   },
   signupButton: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#4c00b4',
+    borderColor: Colors.primary,
     minWidth: 200,
     alignItems: 'center',
   },
   signupButtonText: {
-    color: '#4c00b4',
+    color: Colors.primary,
     fontSize: 16,
     fontWeight: '700',
   },

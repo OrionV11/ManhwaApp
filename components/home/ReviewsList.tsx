@@ -1,9 +1,9 @@
+import Loading from '@/constants/Loading';
 import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -166,10 +166,10 @@ export default function ReviewsList() {
 
   if (loading && reviews.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
+    <View style={styles.loadingContainer}>
+      <Loading />
+    </View>
+  );
   }
 
   return (
@@ -371,4 +371,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textSecondary,
   },
+  
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
 });

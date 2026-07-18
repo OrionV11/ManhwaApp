@@ -1,18 +1,19 @@
 // app/user/[id]/favorites.tsx
 
+import { Colors } from '@/constants/theme';
+import { api } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { api } from '@/utils/api';
 
 type Favorite = {
   id: number;
@@ -107,7 +108,7 @@ export default function UserFavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   backButton: {
     padding: 8,
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
   },
   loadingContainer: {
     flex: 1,
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     marginTop: 16,
   },
   listContainer: {
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
   mediaCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 90,
     borderRadius: 8,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: Colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -174,12 +175,12 @@ const styles = StyleSheet.create({
   mediaTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
     marginBottom: 4,
   },
   mediaType: {
     fontSize: 12,
-    color: '#999',
+    color: Colors.textSecondary,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
@@ -191,6 +192,6 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
   },
 });

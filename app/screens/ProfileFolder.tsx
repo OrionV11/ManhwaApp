@@ -1,4 +1,7 @@
+import Loading from '@/constants/Loading';
 import { BorderRadius, Colors, Spacing } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
+import { api, ApiError } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -13,8 +16,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
-import { api, ApiError } from '@/utils/api';
 
 
 interface Folder {
@@ -161,12 +162,11 @@ export default function ProfileList() {
   } 
 
   if (loading && folders.length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#4c00b4" />
-        <Text style={styles.loadingText}>Loading folders...</Text>
-      </View>
-    );
+    return(
+    <View style={styles.loadingContainer}>
+      <Loading />
+    </View>
+  );
   }
 
   return (
@@ -724,4 +724,10 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: '700',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
 });

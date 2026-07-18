@@ -1,9 +1,9 @@
+import Loading from '@/constants/Loading';
 import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -151,11 +151,10 @@ export default function FoldersList() {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#4c00b4" />
-        <Text style={styles.loadingText}>Loading folders...</Text>
-      </View>
-    );
+    <View style={styles.loadingContainer}>
+      <Loading />
+    </View>
+  );
   }
 
   return (
@@ -327,4 +326,11 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: Colors.surfaceVariant,
   },
+  
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
 });

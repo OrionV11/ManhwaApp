@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 
+import { Colors } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 
 const EditProfileScreen = () => {
@@ -251,7 +252,7 @@ const EditProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   cancelButton: {
     padding: 5,
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: Colors.text,
   },
   placeholder: {
     width: 38,
@@ -286,40 +287,40 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 3,
-    borderColor: '#4c00b4',
+    borderColor: Colors.primary,
   },
   placeholderImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#4c00b4',
+    borderColor: Colors.primary,
   },
   placeholderText: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#fff',
+    color: Colors.text,
   },
   cameraIcon: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
     width: 36,
     height: 36,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#fff',
+    borderColor: Colors.background,
   },
   imageHint: {
     marginTop: 10,
     fontSize: 14,
-    color: '#777',
+    color: Colors.textSecondary,
   },
   form: {
     paddingHorizontal: 20,
@@ -330,18 +331,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: Colors.text,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#f8f8f8',
+    backgroundColor: Colors.surfaceVariant,
     borderRadius: 10,
     paddingHorizontal: 15,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#333',
+    color: Colors.text,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border,
   },
   bioInput: {
     minHeight: 100,
@@ -350,12 +351,12 @@ const styles = StyleSheet.create({
   charCount: {
     textAlign: 'right',
     fontSize: 12,
-    color: '#999',
+    color: Colors.textSecondary,
     marginTop: 5,
   },
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: '#f0e6ff',
+    backgroundColor: Colors.surfaceVariant,
     padding: 15,
     borderRadius: 10,
     marginTop: 10,
@@ -364,7 +365,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
-    color: '#4c00b4',
+    color: Colors.primary,
     marginLeft: 10,
     lineHeight: 20,
   },
@@ -379,18 +380,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButton: {
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
   },
   cancelButtonStyle: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: Colors.surfaceVariant,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors.text,
   },
   cancelButtonText: {
-    color: '#333',
+    color: Colors.text,
   },
 });
 

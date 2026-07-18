@@ -1,18 +1,19 @@
 // app/user/[id]/reviews.tsx
 
+import { Colors } from '@/constants/theme';
+import { api } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { api } from '@/utils/api';
 
 type Review = {
   id: number;
@@ -113,7 +114,7 @@ export default function UserReviewsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   backButton: {
     padding: 8,
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
   },
   loadingContainer: {
     flex: 1,
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     marginTop: 16,
   },
   listContainer: {
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
   },
   reviewCard: {
     flexDirection: 'row',
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
     marginRight: 8,
   },
   rating: {
@@ -188,22 +189,22 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
   },
   reviewTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#444',
+    color: Colors.text,
     marginBottom: 4,
   },
   reviewText: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   reviewDate: {
     fontSize: 12,
-    color: '#999',
+    color: Colors.textTertiary,
     marginTop: 8,
   },
 });

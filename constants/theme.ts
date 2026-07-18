@@ -10,35 +10,40 @@ const tintColorDark = '#fff';
 
 // constants/theme.ts
 export const Colors = {
-  // Primary dark blue palette
-  background: '#0A1929',      // Deep navy background
-  surface: '#132F4C',         // Slightly lighter for cards/surfaces
-  surfaceVariant: '#1E3A5F',  // For hover states, borders
-  
-  // Blue accents
-  primary: '#3B82F6',         // Bright blue (primary actions)
-  primaryLight: '#60A5FA',    // Lighter blue (hover states)
-  primaryDark: '#2563EB',     // Darker blue (pressed states)
-  
-  // Supporting colors
-  secondary: '#06B6D4',       // Cyan accent
-  success: '#10B981',         // Green
-  warning: '#F59E0B',         // Amber
-  error: '#EF4444',           // Red
-  
-  // Text colors
-  text: '#E2E8F0',            // Light gray for primary text
-  textSecondary: '#94A3B8',   // Muted gray for secondary text
-  textTertiary: '#64748B',    // Even more muted
-  
-  // UI elements
-  border: '#1E3A5F',          // Subtle borders
-  divider: '#1A2942',         // Dividers
-  overlay: 'rgba(10, 25, 41, 0.8)', // For modals
-  
-  // Special
-  highlight: '#3B82F620',     // Blue tint for selections
-  shadow: '#000000',
+  // Backgrounds
+  background: '#050505',      // Near Black
+  surface: '#111111',         // Card Background
+  surfaceVariant: '#1A1A1A',  // Elevated Surface
+
+  // Primary Neon Colors
+  primary: '#00F5FF',         // Neon Cyan
+  primaryLight: '#66FCFF',    // Bright Cyan Glow
+  primaryDark: '#00A6B8',      // Deep Cyan
+
+  // Accent Colors
+  secondary: '#FF00D4',       // Neon Magenta
+  success: '#39FF14',         // Matrix Green
+  warning: '#FFD500',         // Electric Yellow
+  error: '#FF1744',           // Neon Red
+
+  // Text
+  text: '#F8F8F8',            // White
+  textSecondary: '#B8B8B8',   // Gray
+  textTertiary: '#707070',    // Dark Gray
+
+  // UI
+  border: '#222222',
+  divider: '#161616',
+  overlay: 'rgba(0,0,0,0.85)',
+
+  // Glow
+  highlight: 'rgba(0,245,255,0.18)',
+  shadow: '#00F5FF',
+
+  // Extra Neon Colors
+  purple: '#8A2EFF',
+  orange: '#FF7A00',
+  lime: '#C6FF00',
 };
 
 export const Spacing = {
@@ -51,10 +56,10 @@ export const Spacing = {
 };
 
 export const BorderRadius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm: 4,
+  md: 8,
+  lg: 10,
+  xl: 100,
   full: 9999,
 };
 

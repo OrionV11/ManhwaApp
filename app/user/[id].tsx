@@ -1,5 +1,8 @@
 // app/user/[id].tsx
 
+import { Colors } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
+import { api, ApiError } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -13,8 +16,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
-import { api, ApiError } from '@/utils/api';
 
 type UserProfile = {
   id: number;
@@ -270,7 +271,7 @@ export default function UserProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -285,17 +286,17 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
-    color: '#666',
+    color: Colors.textSecondary,
     marginBottom: 20,
   },
   backButton: {
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   backButtonText: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -312,7 +313,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.surfaceVariant,
   },
   avatar: {
     width: 100,
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: Colors.surfaceVariant,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -332,12 +333,12 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
     marginBottom: 8,
   },
   bio: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 20,
     paddingHorizontal: 20,
@@ -353,18 +354,18 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: Colors.textSecondary,
     marginTop: 4,
   },
   followButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#4c00b4',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 24,
@@ -372,10 +373,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   followingButton: {
-    backgroundColor: '#666',
+    backgroundColor: Colors.primary,
   },
   followButtonText: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -384,13 +385,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 2,
-    borderColor: '#4c00b4',
+    borderColor: Colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
   },
   editButtonText: {
-    color: '#4c00b4',
+    color: Colors.primary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -400,14 +401,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
     marginBottom: 16,
   },
   contentCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.surfaceVariant,
     borderRadius: 12,
     marginBottom: 12,
   },
@@ -418,11 +419,11 @@ const styles = StyleSheet.create({
   contentTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: Colors.text,
     marginBottom: 4,
   },
   contentCount: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
   },
 });

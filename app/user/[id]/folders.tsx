@@ -1,4 +1,5 @@
 // app/user/[id]/folders.tsx
+import { Colors } from '@/constants/theme';
 import { api, ApiError } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useGlobalSearchParams, useRouter } from 'expo-router';
@@ -154,7 +155,7 @@ export default function UserFoldersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   backButton: {
     padding: 8,
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
   },
   loadingContainer: {
     flex: 1,
@@ -188,12 +189,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#666',
+    color: Colors.textSecondary,
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
+    color: Colors.textSecondary,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -201,12 +202,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   folderCard: {
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: Colors.border,
   },
   folderHeader: {
     flexDirection: 'row',
@@ -222,16 +223,16 @@ const styles = StyleSheet.create({
   folderTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#222',
+    color: Colors.text,
     marginBottom: 4,
   },
   folderDescription: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   privateBadge: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: Colors.background,
     padding: 6,
     borderRadius: 6,
   },
@@ -250,14 +251,14 @@ const styles = StyleSheet.create({
     width: 60,
     height: 90,
     borderRadius: 6,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'absolute',
     right: 0,
   },
   moreText: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -273,11 +274,11 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
   },
   folderDate: {
     fontSize: 12,
-    color: '#999',
+    color: Colors.textSecondary,
     marginLeft: 'auto',
   },
 });
