@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import User, Media, UserMediaList
+from backend.models import User, Media, UserMediaList
 from fastapi import HTTPException
 from datetime import datetime
 

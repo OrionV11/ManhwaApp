@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import User, UserMediaList, MediaLike, Review
+from backend.models import User, UserMediaList, MediaLike, Review
 
 def get_user_stats(db: Session, user_id: int):
     user = db.query(User).filter(User.id == user_id).first()

@@ -1,7 +1,7 @@
 
 from sqlalchemy.orm import Session
 from typing import Dict, List, Optional
-from models import Folder, FolderItem, User
+from backend.models import Folder, FolderItem, User
 
 def create_folder(
     db: Session, 

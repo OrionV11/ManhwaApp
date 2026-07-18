@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import User, Media, MediaLike
+from backend.models import User, Media, MediaLike
 from typing import List, Dict
 from controllers.media import media_to_dict
 

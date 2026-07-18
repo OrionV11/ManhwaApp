@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import User, Media, UserMediaList, UserActivity
+from backend.models import User, Media, UserMediaList, UserActivity
 from typing import List, Dict, Optional
 from datetime import datetime
 from controllers.media import media_to_dict

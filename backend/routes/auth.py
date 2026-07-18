@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 from logger import auth_logger, error_logger
 from database import get_db
-from models import User
+from backend.models import User
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from slowapi import Limiter

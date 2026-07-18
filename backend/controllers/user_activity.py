@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import User, Media, UserActivity
+from backend.models import User, Media, UserActivity
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from controllers.media import media_to_dict
@@ -95,7 +95,7 @@ def get_following_feed(
     limit: int = 50
 ) -> List[Dict]:
     """Get activity feed from users that the current user follows"""
-    from models import UserFollow
+    from backend.models import UserFollow
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

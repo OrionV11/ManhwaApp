@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from database import SessionLocal
-from models import User
+from backend.models import User
 from dependencies import get_current_user_id
 
 def update_profile(user_id, username=None, bio=None, profile_picture=None):

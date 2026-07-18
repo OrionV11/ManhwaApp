@@ -3,7 +3,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from models import User, Review, Media 
+from backend.models import User, Review, Media 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 from dotenv import load_dotenv
@@ -18,7 +18,7 @@ except ImportError:
 
 # Import User model - adjust path as needed
 try:
-    from models import User
+    from backend.models import User
 except ImportError:
     from database.models import User
 

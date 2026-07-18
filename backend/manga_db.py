@@ -1,79 +1,116 @@
-#!/usr/bin/env python3
-"""
-Grant database permissions using Python/SQLAlchemy
-Avoids SSL issues with local psql
-"""
-from sqlalchemy import text, create_engine
-from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
+import hashlib
+import json
+from database import SessionLocal
+from models import Media
+from datetime import datetime
 
-load_dotenv()
+def parse_year_to_date(year):
+    if not year:
+        return None
+    try:
+        return datetime(int(year), 1, 1).date()
+    except (ValueError, TypeError):
+        return None
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+def clean_integer(value):
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
 
-if not DATABASE_URL:
-    print("❌ DATABASE_URL not set in .env file!")
-    exit(1)
-
-print(f"🔐 Connecting to database to grant permissions...")
-
-try:
-    # Create engine connection
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"connect_timeout": 15},
-        pool_pre_ping=True,
-    )
-    
-    SessionLocal = sessionmaker(bind=engine)
+def import_data(filename, media_type):
+    """Import either MANHWA or ANIME data"""
     db = SessionLocal()
-    
-    # Test connection
-    db.execute(text("SELECT 1"))
-    print("✓ Connected to database")
-    
-    # Grant permissions
-    print("🔐 Granting permissions to manhwaapp_db_user...")
-    
-    commands = [
-        "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO manhwaapp_db_user;",
-        "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO manhwaapp_db_user;",
-        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO manhwaapp_db_user;",
-        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO manhwaapp_db_user;",
-    ]
-    
-    for cmd in commands:
-        try:
-            db.execute(text(cmd))
-            print(f"  ✓ {cmd.split()[0:3]}...")
-        except Exception as e:
-            print(f"  ⚠ {cmd.split()[0:3]}: {str(e)[:50]}")
-    
-    db.commit()
-    print("\n✅ All permissions granted successfully!")
-    
-    # Verify
-    print("\n📋 Verifying permissions...")
-    result = db.execute(text("""
-        SELECT grantee, privilege_type 
-        FROM role_table_grants 
-        WHERE table_name='media' 
-        AND grantee='manhwaapp_db_user'
-        LIMIT 5
-    """))
-    
-    rows = result.fetchall()
-    if rows:
-        print(f"✓ Found {len(rows)} permissions for manhwaapp_db_user on media table")
-        for row in rows:
-            print(f"  - {row[0]}: {row[1]}")
-    else:
-        print("⚠ Could not verify permissions (might still be working)")
-    
-    db.close()
-    print("\n✨ Done!")
+    success = 0
+    errors = 0
 
-except Exception as e:
-    print(f"❌ Error: {e}")
-    exit(1)
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        print(f"\n📖 Importing {len(data)} {media_type} records from {filename}...")
+
+        for item in data:
+            try:
+                item_id = item.get('id')
+                existing = db.query(Media).filter(Media.id == item_id).first()
+                start_date = parse_year_to_date(item.get('year_released'))
+
+                if existing:
+                    print(f"  ⏭ Skipping {item.get('title_romaji', 'Unknown')} (already exists)")
+                    success += 1
+                else:
+                    new_media = Media(
+                        id=item_id,
+                        title_romaji=item.get('title_romaji', ''),
+                        title_english=item.get('title_english'),
+                        title_native=item.get('title_native'),
+                        type=media_type,
+                        format=item.get('format', 'MANGA' if media_type == 'MANHWA' else 'ANIME'),
+                        status=item.get('status'),
+                        description=item.get('description'),
+                        start_date=start_date,
+                        end_date=None,
+                        chapters=clean_integer(item.get('chapters')),
+                        volumes=clean_integer(item.get('volumes')),
+                        episodes=clean_integer(item.get('episodes')),
+                        cover_image=item.get('cover_image_url'),
+                        banner_image=None,
+                        genres=item.get('genres', []),
+                        tags=item.get('tags', []),
+                        average_score=item.get('average_score'),
+                        popularity=item.get('popularity', 0),
+                        favorites=item.get('favorites', 0),
+                        source='ANILIST',
+                        country_of_origin='KR' if media_type == 'MANHWA' else 'JP'
+                    )
+                    db.add(new_media)
+                    success += 1
+
+                if success % 100 == 0:
+                    db.commit()
+                    print(f"  ✓ Processed {success} {media_type} records...")
+
+            except Exception as e:
+                errors += 1
+                print(f"  ❌ Error: {item.get('title_romaji', 'Unknown')}: {str(e)[:80]}")
+                db.rollback()
+
+        db.commit()
+        print(f"\n✅ {media_type}: {success} added, {errors} errors")
+        return success, errors
+
+    except FileNotFoundError:
+        print(f"❌ File not found: {filename}")
+        return 0, len(data)
+    except Exception as e:
+        print(f"❌ Fatal error in {filename}: {e}")
+        db.rollback()
+        return 0, 1
+    finally:
+        db.close()
+
+if __name__ == "__main__":
+    total_success = 0
+    total_errors = 0
+
+    print("=" * 50)
+    print("🚀 Starting database import...")
+    print("=" * 50)
+
+    # Import both
+    success, errors = import_data('manhwa_data.json', 'MANHWA')
+    total_success += success
+    total_errors += errors
+
+    success, errors = import_data('anime_data.json', 'ANIME')
+    total_success += success
+    total_errors += errors
+
+    print("\n" + "=" * 50)
+    print(f"📊 FINAL RESULTS")
+    print(f"  Total added: {total_success}")
+    print(f"  Total errors: {total_errors}")
+    print("=" * 50)

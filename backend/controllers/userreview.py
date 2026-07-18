@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import User, Media, Review, ReviewLike
+from backend.models import User, Media, Review, ReviewLike
 from typing import List, Dict, Optional
 from controllers.media import media_to_dict
 
@@ -39,7 +39,7 @@ def add_review(db: Session, user_id: int, media_id: int, content: str,
     db.commit()
     db.refresh(review)
 
-    from models import UserActivity
+    from backend.models import UserActivity
     activity = UserActivity(
         user_id=user_id,
         media_id=media_id,
@@ -102,7 +102,7 @@ def remove_review(db: Session, review_id: int, user_id: int) -> Dict:
     if review.user_id != user_id:
         raise ValueError("You can only delete your own reviews")
 
-    from models import UserActivity
+    from backend.models import UserActivity
     db.query(UserActivity).filter(
         UserActivity.user_id == user_id,
         UserActivity.media_id == review.media_id,

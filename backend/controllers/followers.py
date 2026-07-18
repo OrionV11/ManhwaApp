@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import User, UserFollow
+from backend.models import User, UserFollow
 from typing import List, Dict
 from datetime import datetime
 

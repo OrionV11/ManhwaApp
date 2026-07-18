@@ -16,8 +16,8 @@ export const Colors = {
   surfaceVariant: '#1A1A1A',  // Elevated Surface
 
   // Primary Neon Colors
-  primary: '#00F5FF',         // Neon Cyan
-  primaryLight: '#66FCFF',    // Bright Cyan Glow
+  primary: '#052a2c',         // Neon Cyan
+  primaryLight: '#00a0a3',    // Bright Cyan Glow
   primaryDark: '#00A6B8',      // Deep Cyan
 
   // Accent Colors
