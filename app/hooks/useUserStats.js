@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_BASE_URL = 'https://manhwaapp-jn15.onrender.com';
+const API_BASE_URL = 'https://manhwaapp-1.onrender.com';
 
 export default function useUserStats(userId) {
   const [stats, setStats] = useState(null);

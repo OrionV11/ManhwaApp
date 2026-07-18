@@ -14,7 +14,7 @@ interface AnimatedCardProps {
   styles: typeof styles;
 }
 
-const API_BASE_URL = 'https://manhwaapp-jn15.onrender.com';  
+const API_BASE_URL = 'https://manhwaapp-1.onrender.com';  
 const ManhwaFetch: React.FC = () => {
   const [media, setMedia] = useState<Media[]>([]);
   const [loading, setLoading] = useState(true);

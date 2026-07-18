@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Media } from '../services/Manhwa';
 
-const API_BASE_URL = 'https://manhwaapp-jn15.onrender.com';  
+const API_BASE_URL = 'https://manhwaapp-1.onrender.com';  
 const ManhwaFetch: React.FC = () => {
   const [media, setMedia] = useState<Media[]>([]);
   const [loading, setLoading] = useState(true);

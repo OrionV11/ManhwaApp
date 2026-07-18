@@ -1,7 +1,7 @@
 import hashlib
 import json
 from database import SessionLocal
-from models import Media
+from backend.models import Media
 from datetime import datetime
 
 def parse_year_to_date(year):

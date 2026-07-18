@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { LoginResponse, Media } from './Manhwa';
 
-const API_BASE_URL = 'https://manhwaapp-jn15.onrender.com';
+const API_BASE_URL = 'https://manhwaapp-1.onrender.com';
 
 export class ApiError extends Error {
   status: number;

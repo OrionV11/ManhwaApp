@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/utils/api';
 
-const API_BASE_URL = 'https://manhwaapp-jn15.onrender.com';
+const API_BASE_URL = 'https://manhwaapp-1.onrender.com';
 
 interface Media {
   id: number;

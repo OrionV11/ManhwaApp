@@ -14,7 +14,7 @@ import ReviewsList from './ReviewsList';
 
 import { BorderRadius, Colors, Spacing } from '@/constants/theme';
 
-const API_BASE_URL = 'https://manhwaapp-jn15.onrender.com';  
+const API_BASE_URL = 'https://manhwaapp-1.onrender.com';  
 
 export default function HomeView() {
   const [activeTab, setActiveTab] = useState('media');

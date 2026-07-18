@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
-const API_BASE_URL = 'https://manhwaapp-jn15.onrender.com';  
+const API_BASE_URL = 'https://manhwaapp-1.onrender.com';  
 
 interface User {
   id: number;
