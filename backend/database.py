@@ -19,7 +19,10 @@ connect_args = {
 if "render.com" in DATABASE_URL:
     if "?sslmode=" not in DATABASE_URL:
         DATABASE_URL = DATABASE_URL + "?sslmode=require"
-    connect_args["sslcert"] = certifi.where()
+    
+    # Use sslrootcert for CA certificate verification, not sslcert
+    connect_args["sslrootcert"] = certifi.where()
+    
 elif "localhost" in DATABASE_URL:
     if "?sslmode=" not in DATABASE_URL:
         DATABASE_URL = DATABASE_URL + "?sslmode=disable"
@@ -45,8 +48,6 @@ except Exception as e:
 
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
-
-# Remove the model imports from here - they'll import Base from this file
 
 def get_db():
     db = SessionLocal()
