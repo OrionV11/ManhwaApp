@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Grant database permissions using Python/SQLAlchemy
-Avoids SSL issues with local psql
+Create database user and grant permissions
+Run as the postgres admin user
 """
 from sqlalchemy import text, create_engine
 from sqlalchemy.orm import sessionmaker
@@ -16,10 +16,9 @@ if not DATABASE_URL:
     print("❌ DATABASE_URL not set in .env file!")
     exit(1)
 
-print(f"🔐 Connecting to database to grant permissions...")
+print("🔐 Setting up database permissions...\n")
 
 try:
-    # Create engine connection
     engine = create_engine(
         DATABASE_URL,
         connect_args={"connect_timeout": 15},
@@ -33,10 +32,28 @@ try:
     db.execute(text("SELECT 1"))
     print("✓ Connected to database")
     
-    # Grant permissions
-    print("🔐 Granting permissions to manhwaapp_db_user...")
+    # Create user if it doesn't exist
+    print("\n👤 Creating user 'manhwaapp_db_user' if not exists...")
+    try:
+        db.execute(text("""
+            CREATE USER manhwaapp_db_user WITH PASSWORD 'g511pMdXWHIdnzhq9a2W5fsvZTg1EoDN';
+        """))
+        db.commit()
+        print("✓ User created")
+    except Exception as e:
+        if "already exists" in str(e):
+            print("✓ User already exists")
+            db.rollback()
+        else:
+            print(f"⚠ {e}")
+            db.rollback()
+    
+    # Grant privileges
+    print("\n🔐 Granting privileges...")
     
     commands = [
+        "GRANT CONNECT ON DATABASE manhwaapp_db TO manhwaapp_db_user;",
+        "GRANT USAGE ON SCHEMA public TO manhwaapp_db_user;",
         "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO manhwaapp_db_user;",
         "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO manhwaapp_db_user;",
         "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO manhwaapp_db_user;",
@@ -46,33 +63,17 @@ try:
     for cmd in commands:
         try:
             db.execute(text(cmd))
-            print(f"  ✓ {cmd.split()[0:3]}...")
+            db.commit()
+            cmd_short = ' '.join(cmd.split()[0:3])
+            print(f"✓ {cmd_short}...")
         except Exception as e:
-            print(f"  ⚠ {cmd.split()[0:3]}: {str(e)[:50]}")
-    
-    db.commit()
-    print("\n✅ All permissions granted successfully!")
-    
-    # Verify
-    print("\n📋 Verifying permissions...")
-    result = db.execute(text("""
-        SELECT grantee, privilege_type 
-        FROM role_table_grants 
-        WHERE table_name='media' 
-        AND grantee='manhwaapp_db_user'
-        LIMIT 5
-    """))
-    
-    rows = result.fetchall()
-    if rows:
-        print(f"✓ Found {len(rows)} permissions for manhwaapp_db_user on media table")
-        for row in rows:
-            print(f"  - {row[0]}: {row[1]}")
-    else:
-        print("⚠ Could not verify permissions (might still be working)")
+            db.rollback()
+            cmd_short = ' '.join(cmd.split()[0:3])
+            print(f"⚠ {cmd_short}: {str(e)[:60]}")
     
     db.close()
-    print("\n✨ Done!")
+    print("\n✅ Database user setup complete!")
+    print("\nYou can now run: python import_data_fixed.py")
 
 except Exception as e:
     print(f"❌ Error: {e}")
